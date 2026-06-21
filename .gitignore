@@ -1,0 +1,15 @@
+.gradle/
+build/
+out/
+run/
+
+*.class
+*.log
+*.tmp
+*.bak
+*.bkp
+
+.idea/
+.vscode/
+.DS_Store
+bin/

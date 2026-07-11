@@ -1,0 +1,34 @@
+# ADR 0003 - Visibility Based On Observation
+
+## Context
+
+The first implementation considered blocks exposed when
+touching air or fluids.
+
+Production analysis showed that physical contact does not
+always represent player visibility.
+
+Examples:
+
+- ores behind lava;
+- ores separated by walls;
+- ores visible through glass.
+
+## Decision
+
+AntiXray visibility must be based on player observation,
+not only block adjacency.
+
+A block is visible when the player has a valid observation path
+under normal gameplay conditions.
+
+## Consequences
+
+Positive:
+
+- fewer false reveals;
+- closer to real player experience.
+
+Negative:
+
+- requires additional visibility analysis.

@@ -1,0 +1,35 @@
+package com.amadeu.mundozantixray.domain.model;
+
+public enum BlockIdentity {
+
+    COAL_ORE,
+    DEEPSLATE_COAL_ORE,
+
+    COPPER_ORE,
+    DEEPSLATE_COPPER_ORE,
+
+    IRON_ORE,
+    DEEPSLATE_IRON_ORE,
+
+    GOLD_ORE,
+    DEEPSLATE_GOLD_ORE,
+
+    REDSTONE_ORE,
+    DEEPSLATE_REDSTONE_ORE,
+
+    EMERALD_ORE,
+    DEEPSLATE_EMERALD_ORE,
+
+    LAPIS_ORE,
+    DEEPSLATE_LAPIS_ORE,
+
+    DIAMOND_ORE,
+    DEEPSLATE_DIAMOND_ORE,
+
+    NETHER_GOLD_ORE,
+    NETHER_QUARTZ_ORE,
+
+    ANCIENT_DEBRIS,
+
+    LAVA
+}

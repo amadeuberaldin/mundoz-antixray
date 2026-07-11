@@ -85,3 +85,17 @@ All transformations affect only transmitted data.
 Version 1 implemented the functionality directly using Minecraft classes.
 
 Version 2 restructures the same behavior using domain-driven design principles.
+
+---
+
+# Future Evolution
+
+MundoZ AntiXray is designed as the first step toward
+a broader player observation model.
+
+The long-term goal is not only hiding resources,
+but understanding which world information belongs
+to each player's observable representation.
+
+AntiXray is the first security policy built on top
+of this concept.

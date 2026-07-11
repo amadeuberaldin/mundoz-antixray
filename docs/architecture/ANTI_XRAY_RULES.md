@@ -2,7 +2,7 @@
 
 ## Hidden resources
 
-Resources completely surrounded by terrain may be hidden.
+Resources completely hidden inside terrain can be obfuscated.
 
 ## Exposed resources
 
@@ -19,3 +19,10 @@ Player construction blocks should not be hidden.
 
 Reason:
 visual correctness is more important than hiding uncommon blocks.
+
+## Player placed blocks
+
+Blocks commonly used for construction must not be hidden.
+
+Reason:
+The system must preserve building visual correctness.

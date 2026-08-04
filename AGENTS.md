@@ -7,7 +7,11 @@ defined by this repository.
 
 The stable v1 implementation is preserved by tag `v1.0.0`.
 
-Development occurs on branch `v2-domain-architecture`.
+The integration branch for v2 development is
+`v2-domain-architecture`.
+
+Autonomous agent work occurs only on dedicated `codex/*` branches
+created from the current integration branch.
 
 ## Required Reading
 
@@ -100,9 +104,10 @@ Every commit must:
 
 Do not create large catch-all refactoring commits.
 
-Do not commit unless explicitly instructed.
+Do not commit or push unless:
 
-Do not push unless explicitly instructed.
+- explicitly instructed; or
+- working under an accepted autonomous mission on a dedicated `codex/*` branch.
 
 ## Working Process
 
@@ -111,14 +116,19 @@ For each implementation task:
 1. Inspect the relevant v1 implementation.
 2. Read the applicable architecture documents and ADRs.
 3. Identify the smallest safe change.
-4. Explain the proposed change before editing.
+4. For supervised tasks, explain the proposed change before editing.
+   For accepted autonomous missions, follow the approved mission plan
+   without requesting approval for routine implementation details.
 5. Modify only the required files.
 6. Run `git diff --check`.
-7. Run relevant tests.
-8. Run `./gradlew clean build`.
-9. Show the resulting diff.
+7. Run relevant focused tests.
+8. Run `./gradlew test`.
+9. Run `./gradlew clean build`.
 10. Explain behavior impact and architectural impact.
-11. Stop for review before committing unless explicitly instructed.
+11. Stop for review before committing unless:
+    - explicitly instructed to commit; or
+    - executing an accepted autonomous mission on a dedicated
+      `codex/*` branch.
 
 ## Compatibility
 
@@ -238,6 +248,12 @@ The agent may independently perform:
 - small implementations explicitly requested by the user;
 - test creation for behavior already defined by accepted documentation.
 
+An accepted autonomous mission authorizes routine edits, tests,
+commits, and pushes only:
+
+- within the approved mission scope;
+- on the dedicated `codex/*` branch assigned to that mission.
+
 The agent must stop for human review before:
 
 - changing gameplay behavior;
@@ -247,7 +263,8 @@ The agent must stop for human review before:
 - replacing the active v1 runtime path;
 - removing legacy production code;
 - expanding the AntiXray migration into a general-purpose Observation Engine;
-- creating commits or pushing changes unless explicitly authorized.
+- committing or pushing outside an accepted autonomous mission;
+- committing or pushing to any branch other than the assigned `codex/*` branch.
 
 When uncertain, report the uncertainty instead of choosing silently.
 
@@ -328,3 +345,127 @@ At completion, the agent must provide:
 
 The agent must push only to its dedicated `codex/*` branch and must not
 merge the branch.
+
+## Mission Planning
+
+Before editing code, the agent must:
+
+- inspect the current implementation;
+- identify the smallest vertical slices;
+- produce an implementation plan;
+- estimate the number of commits;
+- explain why the slices are ordered that way;
+- identify known risks and likely human decision points;
+- identify the expected files or packages involved;
+- define the mission completion criteria.
+
+The agent must wait for the plan to be accepted before editing.
+
+After the plan is accepted, execute it autonomously.
+
+During execution, the agent may refine implementation details
+and split a planned commit into smaller commits when needed.
+
+The agent must stop for human review if a refinement would:
+
+- expand the approved mission;
+- change architecture or gameplay semantics;
+- modify the active runtime path;
+- affect packet, palette, or serialization behavior;
+- contradict accepted documentation or ADRs.
+
+Before considering the mission complete,
+review the produced work as if you were
+the repository maintainer.
+
+Look for:
+
+- duplicated logic;
+- unnecessary abstractions;
+- architectural inconsistencies;
+- incomplete tests;
+- simplification opportunities.
+
+## Mission Definition
+
+A mission defines an outcome, not a sequence of commands.
+
+The agent is responsible for planning the implementation,
+provided it remains within the approved scope and architecture.
+
+### Mission Name
+
+A short, specific name.
+
+### Mission Objective
+
+The outcome the mission must produce and why it matters.
+
+### Mission Scope
+
+The responsibilities, packages, behaviors, or vertical slices included.
+
+### Out of Scope
+
+Explicitly excluded behavior, architecture, runtime paths, and integrations.
+
+### Completion Criteria
+
+Objective conditions that define when the mission is done.
+
+Completion criteria must be verifiable through code, tests, build results,
+documentation, or repository state.
+
+### Target Branch
+
+The dedicated `codex/*` branch assigned to the mission.
+
+### Expected Deliverables
+
+Examples:
+
+- implementation commits;
+- automated tests;
+- documentation updates;
+- final self-review;
+- pushed autonomous branch;
+- completion report.
+
+### Completion Report
+
+At mission completion, provide:
+
+- summary of the work performed;
+- commits created;
+- files changed;
+- validations executed;
+- deviations from the original plan;
+- remaining limitations;
+- suggested next mission.
+
+## Autonomous Execution
+
+After an implementation plan has been approved,
+the agent should execute the mission without reporting
+every intermediate action.
+
+Routine operations such as:
+
+- reading files;
+- editing code;
+- running tests;
+- running builds;
+- creating approved commits;
+- pushing to the approved codex/* branch;
+
+should be performed silently.
+
+Only interrupt execution when:
+
+- human approval is required by this document;
+- the approved mission cannot be completed;
+- architecture conflicts are found;
+- documentation conflicts are found;
+- runtime behavior would change.
+
+Otherwise, report only the final mission summary.

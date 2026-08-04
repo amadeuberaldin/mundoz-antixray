@@ -1,15 +1,14 @@
 package com.amadeu.mundozantixray.domain.model;
 
-import java.util.Objects;
+public enum ReplacementRepresentation {
 
-public record ReplacementRepresentation(
-        String identifier
-) {
+    STONE,
 
-    public ReplacementRepresentation {
-        Objects.requireNonNull(
-                identifier,
-                "identifier"
-        );
-    }
+    DEEPSLATE,
+
+    NETHERRACK,
+
+    END_STONE,
+
+    TUFF
 }

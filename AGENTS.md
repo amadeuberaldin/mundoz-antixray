@@ -173,3 +173,80 @@ Prefer completing small vertical slices that connect:
 - tests.
 
 Review existing incomplete concepts before adding new ones.
+
+## Architecture Authority
+
+Architecture documents and accepted ADRs define the intended
+responsibilities, boundaries, and direction of the project.
+
+If documentation and implementation disagree:
+
+- do not silently change either one;
+- identify the exact conflict;
+- show the relevant documentation and implementation;
+- explain the possible interpretations;
+- wait for human review before changing behavior or architecture.
+
+Accepted ADRs have priority over older descriptive documents.
+
+Do not automatically rewrite an ADR to match the current code.
+
+Do not automatically rewrite production code to match an ADR
+when the behavioral consequences have not been reviewed.
+
+## Abstraction Discipline
+
+Do not introduce a new abstraction when an existing concept
+can be completed, corrected, or connected safely.
+
+Before creating a new:
+
+- model;
+- interface;
+- policy;
+- service;
+- context;
+- decision;
+- result;
+- adapter;
+
+search the current source tree and architecture documents
+for an existing concept with the same or overlapping responsibility.
+
+Prefer completing small vertical slices over adding disconnected scaffolding.
+
+A vertical slice should connect, when applicable:
+
+- Minecraft infrastructure;
+- application coordination;
+- domain decisions;
+- executable tests.
+
+Unused future-oriented concepts must not be integrated into production
+only because they already exist.
+
+Observation Engine concepts are architectural direction until they
+support a concrete and tested AntiXray use case.
+
+## Human Approval Boundaries
+
+The agent may independently perform:
+
+- repository inspection;
+- compilation;
+- test execution;
+- small implementations explicitly requested by the user;
+- test creation for behavior already defined by accepted documentation.
+
+The agent must stop for human review before:
+
+- changing gameplay behavior;
+- changing accepted protection targets;
+- defining visibility or observation semantics;
+- changing packet or palette serialization behavior;
+- replacing the active v1 runtime path;
+- removing legacy production code;
+- expanding the AntiXray migration into a general-purpose Observation Engine;
+- creating commits or pushing changes unless explicitly authorized.
+
+When uncertain, report the uncertainty instead of choosing silently.

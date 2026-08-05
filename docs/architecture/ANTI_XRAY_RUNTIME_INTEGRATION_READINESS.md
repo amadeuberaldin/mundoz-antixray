@@ -185,3 +185,141 @@ only when a reviewed runtime caller demonstrates their exact contract.
 - reviewed bootstrap wiring for v2 services;
 - explicit approval for the v1-to-v2 protected-set behavior change;
 - explicit approval for any mixin or runtime-path modification.
+
+## Commit-by-Commit Migration Roadmap
+
+Each item below is a separate mission unless human review approves a narrower
+grouping. Every commit must compile, pass its focused tests, pass the complete
+test suite and clean build, and leave a valid fail-visible representation.
+
+### 1. Decide the minimum observation contract
+
+Document and accept the facts required for AntiXray observation, including
+occlusion, transparent blocks, fluids, observer position, unavailable data,
+and the relationship between chunk obfuscation and reveal. This is a human-led
+architecture decision because the accepted ADR rejects v1 adjacency semantics
+without defining an executable replacement.
+
+### 2. Implement observation facts and policy
+
+Complete or replace the currently hard-coded `ObservationEvaluationService`
+using pure domain concepts and an accepted `ObservationPolicy`. Add exhaustive
+pure tests for observed, not-observed, and unavailable-fact behavior. Do not
+connect it to Minecraft runtime code.
+
+### 3. Add read-only Minecraft observation analysis
+
+Translate authoritative Minecraft information into the accepted observation
+facts. Keep world reads separate from policy decisions. Test boundaries,
+unavailable data, unloaded areas, and fail-visible behavior without sending
+packets or modifying chunks.
+
+### 4. Complete inactive reveal coordination
+
+Connect supported reveal candidates, protection evaluation, supplied
+observation decisions, and `DefaultRevealPolicy` in an application use case.
+Return representation decisions without depending on Fabric events or
+Minecraft packets.
+
+### 5. Define and implement inactive representation outputs
+
+Introduce only the concrete boundaries required by reviewed callers: one for a
+temporary section representation and one for player-specific reveal updates.
+Use in-memory fakes to prove application behavior before implementing packet
+adapters.
+
+### 6. Characterize section encoding
+
+Build fixtures that serialize unchanged and copied `LevelChunkSection`
+instances. Verify block counts, palette validity, serialized size, and complete
+byte output. Capture the current v1 fallback and failure paths without changing
+the redirect or serializer.
+
+### 7. Build an inactive v2 section representation adapter
+
+Apply approved protection, observation, and replacement decisions to a copied
+section. Never mutate the authoritative section. Compare its representation
+against characterized v1 cases and require original-section fallback for every
+incomplete or invalid evaluation.
+
+### 8. Approve behavior differences
+
+Review the intentionally smaller v2 protection set, removal of arbitrary solid
+replacement fallback, and observation-based visibility. Record which changes
+are accepted for runtime activation. Do not hide these differences behind a
+refactoring commit.
+
+### 9. Integrate chunk representation under explicit runtime approval
+
+Replace one reviewed delegation boundary while retaining the original-section
+fallback. Do not change the mixin injection point and representation encoding
+in the same commit. Validate on representative Overworld, Nether, and End
+sections before expanding the runtime path.
+
+### 10. Integrate reveal separately
+
+After chunk representation is stable, connect the approved observation source
+and reveal use case to player-specific updates. Preserve the radius and trigger
+unless a separate gameplay decision approves changes.
+
+### 11. Remove legacy code in a dedicated cleanup mission
+
+Remove `AntiXrayObfuscator`, `AntiXrayRevealer`, `AntiXrayBlocks`, or
+`AntiXrayContext` only after their replacements are active, tested, and
+reviewed. Do not combine removal with runtime activation.
+
+## First Recommended Runtime Integration Mission
+
+### Mission Name
+
+Guarded Chunk Representation Integration
+
+### Objective
+
+Connect a previously completed and byte-characterized v2 section
+representation adapter to the existing chunk transmission boundary while
+preserving an unconditional original-section fallback. This is the smallest
+runtime step that exercises protection, observation, and replacement without
+also migrating reveal.
+
+### Prerequisites
+
+- accepted observation semantics and failure behavior;
+- implemented observation facts, policy, and Minecraft fact adapter;
+- inactive section representation adapter;
+- byte-level section encoding characterization;
+- approved v1-to-v2 protection and replacement behavior differences;
+- explicit human approval to modify the active runtime path.
+
+### Scope
+
+- use the existing chunk transmission context and current serialization
+  interception point unless separately reviewed;
+- delegate one section at a time to the v2 representation adapter;
+- write either one complete valid v2 copy or the complete original section;
+- retain the legacy path until comparative runtime validation succeeds;
+- add Overworld, Nether, End, unsupported-block, missing-context, and failure
+  tests.
+
+### Out of Scope
+
+- reveal migration;
+- new observation semantics;
+- mixin injection-point changes;
+- palette format changes;
+- packet format changes;
+- protection-target or replacement-priority changes;
+- legacy removal.
+
+### Completion Criteria
+
+- authoritative sections remain unchanged;
+- every failure writes the original section;
+- encoded output is structurally valid and fully consumed by the client;
+- reviewed v2 decisions match the accepted behavior matrix;
+- the legacy implementation remains available for rollback;
+- focused, complete, clean-build, and server-level validation pass.
+
+This mission must not begin automatically from readiness work. Its prerequisites
+include decisions and active-runtime changes that require explicit human
+approval under `AGENTS.md`.

@@ -27,17 +27,19 @@ public final class MinecraftSectionReplacementCandidateSource {
             LevelChunkSection section
     ) {
         Objects.requireNonNull(section, "section");
-        return candidatesMatching(section::maybeHas);
+        return candidatesMatching(
+                state -> section.maybeHas(state::equals)
+        );
     }
 
     List<BlockState> candidatesMatching(
-            Predicate<Predicate<BlockState>> sectionContains
+            Predicate<BlockState> sectionContains
     ) {
         Objects.requireNonNull(sectionContains, "sectionContains");
 
         List<BlockState> candidates = new ArrayList<>();
         for (BlockState acceptedState : ACCEPTED_STATES) {
-            if (sectionContains.test(acceptedState::equals)) {
+            if (sectionContains.test(acceptedState)) {
                 candidates.add(acceptedState);
             }
         }

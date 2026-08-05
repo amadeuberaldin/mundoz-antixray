@@ -37,9 +37,7 @@ class MinecraftSectionReplacementCandidateSourceTest {
                         Blocks.NETHERRACK.defaultBlockState(),
                         Blocks.TUFF.defaultBlockState()
                 ),
-                source.candidatesMatching(
-                        candidate -> sectionStates.stream().anyMatch(candidate)
-                )
+                source.candidatesMatching(sectionStates::contains)
         );
     }
 
@@ -57,18 +55,14 @@ class MinecraftSectionReplacementCandidateSourceTest {
 
         assertEquals(
                 List.of(),
-                source.candidatesMatching(
-                        candidate -> sectionStates.stream().anyMatch(candidate)
-                )
+                source.candidatesMatching(sectionStates::contains)
         );
     }
 
     @Test
     void resultIsImmutable() {
         List<BlockState> candidates = source.candidatesMatching(
-                candidate -> candidate.test(
-                        Blocks.STONE.defaultBlockState()
-                )
+                Blocks.STONE.defaultBlockState()::equals
         );
 
         assertThrows(

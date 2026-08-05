@@ -82,8 +82,6 @@ class MinecraftSectionReplacementIntegrationTest {
     private List<BlockState> candidatesFrom(
             Set<BlockState> sectionStates
     ) {
-        return candidateSource.candidatesMatching(
-                candidate -> sectionStates.stream().anyMatch(candidate)
-        );
+        return candidateSource.candidatesMatching(sectionStates::contains);
     }
 }

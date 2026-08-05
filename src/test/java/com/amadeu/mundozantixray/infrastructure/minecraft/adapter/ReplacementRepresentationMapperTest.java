@@ -12,6 +12,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ReplacementRepresentationMapperTest {
 
@@ -50,10 +51,46 @@ class ReplacementRepresentationMapperTest {
     }
 
     @Test
+    void everyValidDefaultBlockStateMapsToItsRepresentation() {
+        for (Map.Entry<ReplacementRepresentation, Block> mapping
+                : EXPECTED_MAPPINGS.entrySet()) {
+            assertEquals(
+                    mapping.getKey(),
+                    ReplacementRepresentationMapper.map(
+                            mapping.getValue().defaultBlockState()
+                    ).orElseThrow(),
+                    mapping.getKey().name()
+            );
+        }
+    }
+
+    @Test
+    void unsafeAndUnsupportedStatesAreNotMapped() {
+        assertTrue(
+                ReplacementRepresentationMapper.map(
+                        Blocks.DIAMOND_ORE.defaultBlockState()
+                ).isEmpty()
+        );
+        assertTrue(
+                ReplacementRepresentationMapper.map(
+                        Blocks.BEDROCK.defaultBlockState()
+                ).isEmpty()
+        );
+    }
+
+    @Test
     void nullRepresentationIsRejected() {
         assertThrows(
                 NullPointerException.class,
-                () -> ReplacementRepresentationMapper.map(null)
+                () -> ReplacementRepresentationMapper.map(
+                        (ReplacementRepresentation) null
+                )
+        );
+        assertThrows(
+                NullPointerException.class,
+                () -> ReplacementRepresentationMapper.map(
+                        (net.minecraft.world.level.block.state.BlockState) null
+                )
         );
     }
 }

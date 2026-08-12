@@ -22,6 +22,7 @@ dependencies {
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
     testImplementation "org.junit.jupiter:junit-jupiter:5.11.4"
+    testImplementation "org.mockito:mockito-core:5.20.0"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 }
 
@@ -37,6 +38,22 @@ tasks.withType(JavaCompile).configureEach {
 
 tasks.test {
     useJUnitPlatform()
+    exclude "**/AntiXrayEnabledShadowIsolationTest.class"
+}
+
+tasks.register("shadowEnabledTest", Test) {
+    description = "Runs guarded runtime tests with startup shadow mode enabled."
+    group = "verification"
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform()
+    include "**/AntiXrayEnabledShadowIsolationTest.class"
+    systemProperty "mundoz.antixray.v2-shadow", "true"
+    shouldRunAfter tasks.test
+}
+
+tasks.check {
+    dependsOn tasks.shadowEnabledTest
 }
 
 version = project.mod_version

@@ -51,6 +51,10 @@ public final class AntiXrayObfuscator {
         int sectionBaseY = chunk.getMinY() + (sectionIndex * 16);
         int chunkMinX = chunk.getPos().getMinBlockX();
         int chunkMinZ = chunk.getPos().getMinBlockZ();
+        AntiXrayShadowRuntime.SectionEvaluation shadowEvaluation = null;
+        if (AntiXrayShadowRuntime.isEnabled()) {
+            shadowEvaluation = AntiXrayShadowRuntime.beginSection(section);
+        }
 
         boolean changed = false;
 
@@ -69,9 +73,31 @@ public final class AntiXrayObfuscator {
 
                     if (AntiXrayBlocks.isOreLike(state)) {
                         if (isExposed(chunk, worldX, worldY, worldZ)) {
+                            if (shadowEvaluation != null) {
+                                shadowEvaluation.compare(
+                                        context.level(),
+                                        context.player(),
+                                        worldX,
+                                        worldY,
+                                        worldZ,
+                                        state,
+                                        false
+                                );
+                            }
                             continue;
                         }
 
+                        if (shadowEvaluation != null) {
+                            shadowEvaluation.compare(
+                                    context.level(),
+                                    context.player(),
+                                    worldX,
+                                    worldY,
+                                    worldZ,
+                                    state,
+                                    true
+                            );
+                        }
                         fake.setBlockState(x, y, z, replacement, false);
                         changed = true;
                         continue;

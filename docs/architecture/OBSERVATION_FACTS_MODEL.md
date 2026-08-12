@@ -68,12 +68,30 @@ weathering copper-grate variant. Classification uses explicit Minecraft
 families and collections where implementation classes differ. It must not
 infer pass-through solely from Minecraft solidity or occlusion properties.
 
-## Deferred Path Analysis
+## Minecraft Path Collection
 
-This fact model does not define observer eye position, target sample position,
-the algorithm used to collect blocks along the path, or exact voxel-shape
-intersection. Unavailable world information must produce `UNKNOWN` rather than
-an invented path fact.
+Minecraft path collection uses the active camera entity's current eye position
+as its origin. It uses ordered voxel-grid traversal, not collision, outline,
+visual, or fluid-shape clipping.
 
-Those concerns require a separately reviewed Minecraft observation-analysis
-slice before runtime integration.
+Targets are sampled at the center and at slightly inset centers of faces whose
+axis places the origin strictly outside the target's closed block bounds. The
+stable sample order is center, X face, Y face, then Z face. An origin on a face
+plane does not select that face.
+
+The target block is excluded from every preceding path. The origin-containing
+block is included unless it is also the target.
+
+Each path remains an independent `ObservationContext`. Application
+coordination returns `OBSERVED` when any sample is observed and
+`NOT_OBSERVED` only when every sample is not observed. The single-path policy
+is unchanged.
+
+Path reads do not load or generate chunks. An unavailable or invalid required
+position appends `UNKNOWN` and ends that sample, preserving fail-visible
+behavior.
+
+## Deferred Integration
+
+The collector is inactive. It does not define packet, palette, chunk
+representation, reveal-event, caching, or runtime performance behavior.

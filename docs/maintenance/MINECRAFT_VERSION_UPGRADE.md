@@ -53,3 +53,25 @@ IllegalArgumentException: Not bootstrapped
 Place this setup before static mappings or fixtures that access `Blocks.*`.
 The sequence is an internal Minecraft lifecycle requirement and must be
 revalidated during version upgrades.
+
+## Observation Path APIs
+
+The inactive observation collector depends on these Minecraft 26.2 behaviors:
+
+- `ServerPlayer.getCamera()` returns the player when no alternate camera is
+  active and the camera entity otherwise;
+- `Entity.getEyePosition()` returns the current, non-interpolated eye origin;
+- `BlockGetter.traverseBlocks()` visits voxel cells in origin-to-target order
+  and includes endpoint cells;
+- `ServerChunkCache.getChunkNow()` returns an already-loaded chunk or `null`
+  without requesting generation;
+- `LevelHeightAccessor.isOutsideBuildHeight()` identifies invalid vertical
+  positions before state access.
+
+The collector excludes its exact target `BlockPos` instead of depending on
+endpoint bias inside `traverseBlocks`. It uses traversal only for cell order;
+block behavior still comes from `MinecraftObservationPathClassifier`.
+
+Minecraft upgrades must revalidate method availability, traversal ordering,
+endpoint behavior, mutable `BlockPos` callback reuse, camera fallback, and
+non-loading chunk access before enabling observation integration.

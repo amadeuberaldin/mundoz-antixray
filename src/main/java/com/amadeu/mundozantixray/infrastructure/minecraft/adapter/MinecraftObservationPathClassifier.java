@@ -8,10 +8,10 @@ import net.minecraft.world.level.block.ChainBlock;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.FenceGateBlock;
-import net.minecraft.world.level.block.IronBarsBlock;
 import net.minecraft.world.level.block.LanternBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.StainedGlassBlock;
+import net.minecraft.world.level.block.StainedGlassPaneBlock;
 import net.minecraft.world.level.block.TintedGlassBlock;
 import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -35,7 +35,9 @@ public final class MinecraftObservationPathClassifier {
                 || block == Blocks.GLASS
                 || block instanceof StainedGlassBlock
                 || block instanceof TintedGlassBlock
-                || block instanceof IronBarsBlock
+                || block == Blocks.GLASS_PANE
+                || block instanceof StainedGlassPaneBlock
+                || block == Blocks.IRON_BARS
                 || Blocks.COPPER_BARS.asList().contains(block)
                 || Blocks.COPPER_GRATE.asList().contains(block)
                 || state.is(Blocks.CRAFTING_TABLE)

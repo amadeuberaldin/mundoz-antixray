@@ -101,10 +101,15 @@ to the runtime until observation semantics and failure behavior are approved.
 
 ### Observation
 
-`ObservationContext`, `ObservationDecision`, and `ObservationPolicy` describe
-the intended boundary. The current `ObservationEvaluationService` always
-returns `OBSERVED`, does not consume `ObservationPolicy`, and does not analyze
-facts. It is incomplete scaffolding and must not be used as a runtime source.
+`ObservationContext`, `ObservationDecision`, `ObservationPolicy`, and
+`ObservationEvaluationService` now form a tested inactive domain flow. Ordered
+path behavior explicitly distinguishes pass-through, occluding, and unknown
+facts. The first occluder is observable, information behind it is not, and
+unknown facts fail visible.
+
+`MinecraftObservationPathClassifier` translates concrete Minecraft block
+states into approved path behavior. It does not read the world, construct a
+path, select sample points, or connect decisions to the runtime.
 
 Accepted ADR 0003 explicitly rejects treating physical contact as equivalent
 to observation. Consequently, the v1 adjacency check cannot silently become
@@ -175,7 +180,9 @@ only when a reviewed runtime caller demonstrates their exact contract.
 
 ## Readiness Gaps
 
-- approved observation facts and policy implementation;
+- read-only construction of ordered path facts from authoritative world state;
+- reviewed observer eye-position, target sampling, and path-sampling semantics;
+- unloaded or unavailable world data translation to `UNKNOWN`;
 - application coordination for reveal;
 - player-specific reveal output contract;
 - temporary v2 section representation builder;
@@ -192,7 +199,7 @@ Each item below is a separate mission unless human review approves a narrower
 grouping. Every commit must compile, pass its focused tests, pass the complete
 test suite and clean build, and leave a valid fail-visible representation.
 
-### 1. Decide the minimum observation contract
+### 1. Decide the minimum observation contract - complete
 
 Document and accept the facts required for AntiXray observation, including
 occlusion, transparent blocks, fluids, observer position, unavailable data,
@@ -200,19 +207,19 @@ and the relationship between chunk obfuscation and reveal. This is a human-led
 architecture decision because the accepted ADR rejects v1 adjacency semantics
 without defining an executable replacement.
 
-### 2. Implement observation facts and policy
+### 2. Implement observation facts and policy - complete
 
 Complete or replace the currently hard-coded `ObservationEvaluationService`
 using pure domain concepts and an accepted `ObservationPolicy`. Add exhaustive
 pure tests for observed, not-observed, and unavailable-fact behavior. Do not
 connect it to Minecraft runtime code.
 
-### 3. Add read-only Minecraft observation analysis
+### 3. Add read-only Minecraft observation analysis - classification complete
 
-Translate authoritative Minecraft information into the accepted observation
-facts. Keep world reads separate from policy decisions. Test boundaries,
-unavailable data, unloaded areas, and fail-visible behavior without sending
-packets or modifying chunks.
+Minecraft block classification is complete. A future mission must define the
+reviewed sampling contract and translate authoritative world reads into an
+ordered path. It must test boundaries, unavailable data, unloaded areas, and
+fail-visible behavior without sending packets or modifying chunks.
 
 ### 4. Complete inactive reveal coordination
 

@@ -97,7 +97,7 @@ class MinecraftRuntimeShadowEvaluatorTest {
                 new MinecraftObservationPathCollector(
                         new MinecraftObservationTargetSampler(),
                         new MinecraftObservationPathClassifier()
-                ),
+                )::collect,
                 new ShadowEvaluationService(
                         new ObservationPathEvaluationService(
                                 new ObservationEvaluationService(

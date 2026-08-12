@@ -25,31 +25,38 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 final class AntiXrayShadowRuntime {
     static final String ENABLED_PROPERTY = "mundoz.antixray.v2-shadow";
 
-    private static final boolean ENABLED = Boolean.getBoolean(ENABLED_PROPERTY);
-    private static final MinecraftRuntimeShadowEvaluator EVALUATOR = evaluator();
-    private static final MinecraftSectionReplacementCandidateSource CANDIDATE_SOURCE =
-            new MinecraftSectionReplacementCandidateSource();
-    private static final ReplacementContextMapper CONTEXT_MAPPER =
-            new ReplacementContextMapper();
 
     private AntiXrayShadowRuntime() {}
 
     static SectionEvaluation beginSection(LevelChunkSection section) {
-        if (!ENABLED) {
-            return SectionEvaluation.disabled();
-        }
-
-        try {
+        return beginSection(() -> {
             List<ReplacementRepresentation> representations =
-                    CONTEXT_MAPPER.mapAvailableRepresentations(
-                            CANDIDATE_SOURCE.candidatesFrom(section)
+                    new ReplacementContextMapper().mapAvailableRepresentations(
+                            new MinecraftSectionReplacementCandidateSource()
+                                    .candidatesFrom(section)
                     );
-            return new SectionEvaluation(EVALUATOR, representations);
-        } catch (RuntimeException shadowFailure) {
+            return new SectionEvaluation(evaluator(), representations);
+        });
+    }
+
+    static SectionEvaluation beginSection(
+            Supplier<SectionEvaluation> enabledEvaluation
+    ) {
+        try {
+            if (!Boolean.parseBoolean(System.getProperty(
+                    ENABLED_PROPERTY,
+                    "false"
+            ))) {
+                return SectionEvaluation.disabled();
+            }
+
+            return enabledEvaluation.get();
+        } catch (Throwable shadowFailure) {
             return SectionEvaluation.disabled();
         }
     }
@@ -57,8 +64,9 @@ final class AntiXrayShadowRuntime {
     static final class SectionEvaluation {
         private final MinecraftRuntimeShadowEvaluator evaluator;
         private final List<ReplacementRepresentation> representations;
+        private boolean candidateEvaluated;
 
-        private SectionEvaluation(
+        SectionEvaluation(
                 MinecraftRuntimeShadowEvaluator evaluator,
                 List<ReplacementRepresentation> representations
         ) {
@@ -73,22 +81,33 @@ final class AntiXrayShadowRuntime {
         RuntimeDecisionComparison compare(
                 ServerLevel level,
                 ServerPlayer player,
-                BlockPos target,
+                int targetX,
+                int targetY,
+                int targetZ,
                 BlockState state,
                 boolean v1Hides
         ) {
-            if (evaluator == null) {
+            if (evaluator == null || candidateEvaluated) {
                 return RuntimeDecisionComparison.V2_CANNOT_EVALUATE;
             }
 
-            return evaluator.compare(
-                    level,
-                    player,
-                    target,
-                    state,
-                    representations,
-                    v1Hides
-            );
+            try {
+                if (!evaluator.supports(state)) {
+                    return RuntimeDecisionComparison.V2_CANNOT_EVALUATE;
+                }
+
+                candidateEvaluated = true;
+                return evaluator.compare(
+                        level,
+                        player,
+                        new BlockPos(targetX, targetY, targetZ),
+                        state,
+                        representations,
+                        v1Hides
+                );
+            } catch (Throwable shadowFailure) {
+                return RuntimeDecisionComparison.V2_CANNOT_EVALUATE;
+            }
         }
     }
 
@@ -97,7 +116,7 @@ final class AntiXrayShadowRuntime {
                 new MinecraftObservationPathCollector(
                         new MinecraftObservationTargetSampler(),
                         new MinecraftObservationPathClassifier()
-                ),
+                )::collect,
                 new ShadowEvaluationService(
                         new ObservationPathEvaluationService(
                                 new ObservationEvaluationService(

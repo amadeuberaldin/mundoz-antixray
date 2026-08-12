@@ -16,11 +16,11 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 public final class MinecraftRuntimeShadowEvaluator {
-    private final MinecraftObservationPathCollector observationCollector;
+    private final ObservationContextSource observationCollector;
     private final ShadowEvaluationService shadowService;
 
     public MinecraftRuntimeShadowEvaluator(
-            MinecraftObservationPathCollector observationCollector,
+            ObservationContextSource observationCollector,
             ShadowEvaluationService shadowService
     ) {
         this.observationCollector = Objects.requireNonNull(
@@ -33,6 +33,14 @@ public final class MinecraftRuntimeShadowEvaluator {
         );
     }
 
+    public boolean supports(BlockState state) {
+        try {
+            return BlockIdentityMapper.map(state).isPresent();
+        } catch (Throwable shadowFailure) {
+            return false;
+        }
+    }
+
     public RuntimeDecisionComparison compare(
             ServerLevel level,
             ServerPlayer player,
@@ -41,10 +49,6 @@ public final class MinecraftRuntimeShadowEvaluator {
             List<ReplacementRepresentation> availableRepresentations,
             boolean v1Hides
     ) {
-        Objects.requireNonNull(level, "level");
-        Objects.requireNonNull(player, "player");
-        Objects.requireNonNull(target, "target");
-
         return compare(
                 state,
                 availableRepresentations,
@@ -84,5 +88,14 @@ public final class MinecraftRuntimeShadowEvaluator {
         } catch (RuntimeException shadowFailure) {
             return RuntimeDecisionComparison.V2_CANNOT_EVALUATE;
         }
+    }
+
+    @FunctionalInterface
+    public interface ObservationContextSource {
+        List<ObservationContext> collect(
+                ServerLevel level,
+                ServerPlayer player,
+                BlockPos target
+        );
     }
 }

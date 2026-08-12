@@ -68,63 +68,50 @@ public final class AntiXrayObfuscator {
                     int worldX = chunkMinX + x;
                     int worldY = sectionBaseY + y;
                     int worldZ = chunkMinZ + z;
-                    BlockPos worldPosition = new BlockPos(worldX, worldY, worldZ);
 
                     if (AntiXrayBlocks.isOreLike(state)) {
-                        boolean v1Hides = !isExposed(
-                                chunk,
-                                worldX,
-                                worldY,
-                                worldZ
-                        );
-                        shadowEvaluation.compare(
-                                context.level(),
-                                context.player(),
-                                worldPosition,
-                                state,
-                                v1Hides
-                        );
-
-                        if (!v1Hides) {
+                        if (isExposed(chunk, worldX, worldY, worldZ)) {
+                            shadowEvaluation.compare(
+                                    context.level(),
+                                    context.player(),
+                                    worldX,
+                                    worldY,
+                                    worldZ,
+                                    state,
+                                    false
+                            );
                             continue;
                         }
 
+                        shadowEvaluation.compare(
+                                context.level(),
+                                context.player(),
+                                worldX,
+                                worldY,
+                                worldZ,
+                                state,
+                                true
+                        );
                         fake.setBlockState(x, y, z, replacement, false);
                         changed = true;
                         continue;
                     }
 
                     if (AntiXrayBlocks.isStructureLike(state)) {
-                        boolean v1Hides = !isNearPlayer(
-                                context.player(),
-                                worldX,
-                                worldY,
-                                worldZ
-                        ) || !isExposed(chunk, worldX, worldY, worldZ);
-                        shadowEvaluation.compare(
-                                context.level(),
-                                context.player(),
-                                worldPosition,
-                                state,
-                                v1Hides
-                        );
+                        if (!isNearPlayer(context.player(), worldX, worldY, worldZ)) {
+                            fake.setBlockState(x, y, z, replacement, false);
+                            changed = true;
+                            continue;
+                        }
 
-                        if (!v1Hides) {
+                        if (isExposed(chunk, worldX, worldY, worldZ)) {
                             continue;
                         }
 
                         fake.setBlockState(x, y, z, replacement, false);
                         changed = true;
-                        continue;
                     }
 
-                    shadowEvaluation.compare(
-                            context.level(),
-                            context.player(),
-                            worldPosition,
-                            state,
-                            true
-                    );
                     fake.setBlockState(x, y, z, replacement, false);
                     changed = true;
                 }

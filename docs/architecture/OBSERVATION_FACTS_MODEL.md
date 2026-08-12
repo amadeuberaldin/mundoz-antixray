@@ -62,9 +62,11 @@ fails visible.
 
 Minecraft infrastructure classifies concrete block states. It explicitly
 treats the approved conservative categories as pass-through and treats other
-known blocks, including lava and ordinary full visual walls, as occluding.
-It must not infer pass-through solely from Minecraft solidity or occlusion
-properties.
+known blocks, including lava and ordinary full visual walls, as occluding. The
+approved categories include both iron and copper bars, and every waxed and
+weathering copper-grate variant. Classification uses explicit Minecraft
+families and collections where implementation classes differ. It must not
+infer pass-through solely from Minecraft solidity or occlusion properties.
 
 ## Deferred Path Analysis
 

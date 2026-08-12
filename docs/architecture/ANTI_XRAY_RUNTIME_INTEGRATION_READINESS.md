@@ -108,8 +108,10 @@ facts. The first occluder is observable, information behind it is not, and
 unknown facts fail visible.
 
 `MinecraftObservationPathClassifier` translates concrete Minecraft block
-states into approved path behavior. It does not read the world, construct a
-path, select sample points, or connect decisions to the runtime.
+states into approved path behavior. Explicit collection coverage includes all
+waxed and weathering copper grates and copper bars without widening the
+fallback for unrelated blocks. The classifier does not read the world,
+construct a path, select sample points, or connect decisions to the runtime.
 
 Accepted ADR 0003 explicitly rejects treating physical contact as equivalent
 to observation. Consequently, the v1 adjacency check cannot silently become

@@ -23,8 +23,8 @@ The first occluding block is observed. Targets behind that occluder are not
 observed.
 
 Air, water, glass, crafting tables, brewing stands, doors, trapdoors, fences,
-fence gates, iron bars, chains, lanterns, buttons, levers, copper grates, and
-stairs are conservative pass-through categories.
+fence gates, iron bars, copper bars, chains, lanterns, buttons, levers, copper
+grates, and stairs are conservative pass-through categories.
 
 Lava, ordinary terrain, full building walls, ores, and other blocks not in an
 approved pass-through category terminate observation. Pass-through must not be
@@ -52,4 +52,5 @@ Negative:
 
 - a future infrastructure slice must construct ordered path facts;
 - conservative pass-through may reveal more information than exact geometry;
-- Minecraft category mappings require version-specific tests.
+- Minecraft category mappings and waxed/weathering implementation differences
+  require version-specific tests.

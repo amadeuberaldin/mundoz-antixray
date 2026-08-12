@@ -113,6 +113,16 @@ waxed and weathering copper grates and copper bars without widening the
 fallback for unrelated blocks. The classifier does not read the world,
 construct a path, select sample points, or connect decisions to the runtime.
 
+`MinecraftObservationTargetSampler` and `MinecraftObservationPathCollector`
+provide the inactive read-only collection boundary. They use the active camera
+eye, deterministic center and observer-facing face samples, Minecraft voxel-
+grid traversal, already-loaded chunks, and target-cell exclusion.
+
+`ObservationPathEvaluationService` aggregates the existing single-path
+decisions without changing `DefaultObservationPolicy`. Any observed or unknown
+sample keeps the target observed; every sample must be not observed before the
+aggregate is not observed.
+
 Accepted ADR 0003 explicitly rejects treating physical contact as equivalent
 to observation. Consequently, the v1 adjacency check cannot silently become
 the v2 observation implementation.
@@ -182,9 +192,7 @@ only when a reviewed runtime caller demonstrates their exact contract.
 
 ## Readiness Gaps
 
-- read-only construction of ordered path facts from authoritative world state;
-- reviewed observer eye-position, target sampling, and path-sampling semantics;
-- unloaded or unavailable world data translation to `UNKNOWN`;
+- runtime caller and performance validation for observation path collection;
 - application coordination for reveal;
 - player-specific reveal output contract;
 - temporary v2 section representation builder;
@@ -216,12 +224,12 @@ using pure domain concepts and an accepted `ObservationPolicy`. Add exhaustive
 pure tests for observed, not-observed, and unavailable-fact behavior. Do not
 connect it to Minecraft runtime code.
 
-### 3. Add read-only Minecraft observation analysis - classification complete
+### 3. Add read-only Minecraft observation analysis - complete
 
-Minecraft block classification is complete. A future mission must define the
-reviewed sampling contract and translate authoritative world reads into an
-ordered path. It must test boundaries, unavailable data, unloaded areas, and
-fail-visible behavior without sending packets or modifying chunks.
+Minecraft classification, target sampling, ordered path collection, and
+multi-sample evaluation are complete as an inactive slice. Runtime callers,
+performance validation, and representation integration remain separate
+missions.
 
 ### 4. Complete inactive reveal coordination
 

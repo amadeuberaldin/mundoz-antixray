@@ -25,11 +25,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 final class AntiXrayShadowRuntime {
     static final String ENABLED_PROPERTY = "mundoz.antixray.v2-shadow";
-    private static final boolean ENABLED = parseEnabled(
-            System.getProperty(ENABLED_PROPERTY)
+    private static final boolean ENABLED = resolveEnabled(
+            () -> System.getProperty(ENABLED_PROPERTY)
     );
 
     private AntiXrayShadowRuntime() {}
@@ -40,6 +41,14 @@ final class AntiXrayShadowRuntime {
 
     static boolean parseEnabled(String propertyValue) {
         return Boolean.parseBoolean(propertyValue);
+    }
+
+    static boolean resolveEnabled(Supplier<String> propertyValue) {
+        try {
+            return parseEnabled(propertyValue.get());
+        } catch (Throwable shadowFailure) {
+            return false;
+        }
     }
 
     static SectionEvaluation beginSection(LevelChunkSection section) {

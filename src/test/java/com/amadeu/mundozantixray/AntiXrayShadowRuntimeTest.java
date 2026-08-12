@@ -55,6 +55,16 @@ class AntiXrayShadowRuntimeTest {
     }
 
     @Test
+    void startupPropertyFailureResolvesToDisabled() {
+        assertEquals(
+                false,
+                AntiXrayShadowRuntime.resolveEnabled(() -> {
+                    throw new SecurityException("property access denied");
+                })
+        );
+    }
+
+    @Test
     void productionActivationIsImmutableAfterInitialization() {
         boolean startupDecision = AntiXrayShadowRuntime.isEnabled();
         System.setProperty(

@@ -23,43 +23,60 @@ class MinecraftObservationPathClassifierTest {
 
     @Test
     void approvedPassThroughCategoriesDoNotTerminateObservation() {
-        List<Block> passThroughBlocks = List.of(
+        assertPassThrough(List.of(
                 Blocks.AIR,
                 Blocks.CAVE_AIR,
+                Blocks.VOID_AIR,
                 Blocks.WATER,
                 Blocks.GLASS,
-                Blocks.STAINED_GLASS.white(),
                 Blocks.TINTED_GLASS,
                 Blocks.GLASS_PANE,
-                Blocks.STAINED_GLASS_PANE.white(),
                 Blocks.CRAFTING_TABLE,
                 Blocks.BREWING_STAND,
                 Blocks.OAK_DOOR,
-                Blocks.IRON_DOOR,
                 Blocks.OAK_TRAPDOOR,
-                Blocks.IRON_TRAPDOOR,
                 Blocks.OAK_FENCE,
                 Blocks.NETHER_BRICK_FENCE,
                 Blocks.OAK_FENCE_GATE,
-                Blocks.IRON_BARS,
                 Blocks.IRON_CHAIN,
                 Blocks.LANTERN,
                 Blocks.SOUL_LANTERN,
                 Blocks.STONE_BUTTON,
                 Blocks.OAK_BUTTON,
                 Blocks.LEVER,
-                Blocks.COPPER_GRATE.asList().getFirst(),
                 Blocks.OAK_STAIRS,
                 Blocks.DEEPSLATE_BRICK_STAIRS
-        );
+        ));
+    }
 
-        for (Block block : passThroughBlocks) {
-            assertEquals(
-                    ObservationPathBehavior.PASS_THROUGH,
-                    classifier.classify(block.defaultBlockState()),
-                    block.toString()
-            );
-        }
+    @Test
+    void everyStainedGlassColorIsPassThrough() {
+        assertPassThrough(Blocks.STAINED_GLASS.asList());
+    }
+
+    @Test
+    void everyStainedGlassPaneColorIsPassThrough() {
+        assertPassThrough(Blocks.STAINED_GLASS_PANE.asList());
+    }
+
+    @Test
+    void everyWaxedAndWeatheringCopperGrateIsPassThrough() {
+        assertPassThrough(Blocks.COPPER_GRATE.asList());
+    }
+
+    @Test
+    void ironBarsAndEveryCopperBarsVariantArePassThrough() {
+        assertPassThrough(List.of(Blocks.IRON_BARS));
+        assertPassThrough(Blocks.COPPER_BARS.asList());
+    }
+
+    @Test
+    void copperFamiliesWithDifferentImplementationClassesRemainPassThrough() {
+        assertPassThrough(Blocks.COPPER_CHAIN.asList());
+        assertPassThrough(Blocks.COPPER_DOOR.asList());
+        assertPassThrough(Blocks.COPPER_TRAPDOOR.asList());
+        assertPassThrough(Blocks.COPPER_LANTERN.asList());
+        assertPassThrough(Blocks.CUT_COPPER_STAIRS.asList());
     }
 
     @Test
@@ -95,7 +112,22 @@ class MinecraftObservationPathClassifierTest {
     }
 
     @Test
+    void unsupportedPartialBlocksRemainOccluding() {
+        assertEquals(
+                ObservationPathBehavior.OCCLUDING,
+                classifier.classify(Blocks.OAK_SLAB.defaultBlockState())
+        );
+    }
+
+    @Test
     void nullStateIsRejected() {
         assertThrows(NullPointerException.class, () -> classifier.classify(null));
+    }
+
+    private void assertPassThrough(List<Block> blocks) {
+        for (Block block : blocks) {
+            assertEquals(ObservationPathBehavior.PASS_THROUGH,
+                    classifier.classify(block.defaultBlockState()), block.toString());
+        }
     }
 }

@@ -22,9 +22,13 @@ class DefaultObservationPolicyTest {
     }
 
     @Test
-    void firstOccluderIsObservedButInformationBehindItIsNot() {
+    void stoneAsTheFirstOccludingTargetIsObserved() {
         assertEquals(ObservationDecision.OBSERVED,
                 evaluate(List.of(ObservationPathBehavior.PASS_THROUGH, ObservationPathBehavior.PASS_THROUGH)));
+    }
+
+    @Test
+    void diamondBehindStoneIsNotObserved() {
         assertEquals(ObservationDecision.NOT_OBSERVED,
                 evaluate(List.of(ObservationPathBehavior.PASS_THROUGH,
                         ObservationPathBehavior.PASS_THROUGH, ObservationPathBehavior.OCCLUDING)));

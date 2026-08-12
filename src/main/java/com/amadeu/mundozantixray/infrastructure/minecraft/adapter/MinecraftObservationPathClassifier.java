@@ -14,7 +14,6 @@ import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.StainedGlassBlock;
 import net.minecraft.world.level.block.TintedGlassBlock;
 import net.minecraft.world.level.block.TrapDoorBlock;
-import net.minecraft.world.level.block.WeatheringCopperGrateBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.Objects;
@@ -37,7 +36,8 @@ public final class MinecraftObservationPathClassifier {
                 || block instanceof StainedGlassBlock
                 || block instanceof TintedGlassBlock
                 || block instanceof IronBarsBlock
-                || block instanceof WeatheringCopperGrateBlock
+                || Blocks.COPPER_BARS.asList().contains(block)
+                || Blocks.COPPER_GRATE.asList().contains(block)
                 || state.is(Blocks.CRAFTING_TABLE)
                 || state.is(Blocks.BREWING_STAND)
                 || block instanceof DoorBlock

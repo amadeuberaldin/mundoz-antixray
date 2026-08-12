@@ -11,7 +11,10 @@ Shadow evaluation is enabled with the JVM system property:
 -Dmundoz.antixray.v2-shadow=true
 ```
 
-It is disabled by default.
+It is disabled by default. The property is read once when the shadow runtime
+class is initialized. That startup decision is retained immutably for the
+lifetime of the process; changing the system property afterward does not
+toggle shadow participation.
 
 ## Runtime Boundary
 
@@ -22,6 +25,11 @@ encoding, context lifecycle, and reveal path are unchanged.
 After v1 has found its section and replacement boundary,
 `AntiXrayShadowRuntime` may create a read-only section evaluation. It reads
 the five accepted v2 terrain candidates once for that section.
+
+When the immutable startup decision is disabled, `AntiXrayObfuscator` bypasses
+the shadow boundary entirely. It creates no shadow section evaluation or
+candidate comparison, performs no observation collection, and constructs no
+v2 evaluator or service.
 
 The section evaluation may shadow-evaluate at most one v2-supported protected
 candidate. V1-only candidates are mapped as unsupported and do not consume
@@ -71,9 +79,11 @@ shadow inputs remain non-authoritative.
 
 ## Performance Boundary
 
-Shadow work occurs only when the opt-in property is enabled and only after the
-existing v1 fast exits. A section scan still inspects at most 4096 cells.
-Accepted replacement terrain is collected once per participating section.
+Shadow work occurs only when the immutable startup decision is enabled and
+only after the existing v1 fast exits. Disabled execution remains on the v1
+path without per-section shadow allocation or property parsing. A participating
+section scan still inspects at most 4096 cells. Accepted replacement terrain
+is collected once per participating section.
 
 At most one supported protected target per participating section may produce
 one center sample and up to three observer-facing face samples. Each sample

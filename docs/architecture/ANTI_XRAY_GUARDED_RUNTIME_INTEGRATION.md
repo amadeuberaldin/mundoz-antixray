@@ -21,14 +21,20 @@ encoding, context lifecycle, and reveal path are unchanged.
 
 After v1 has found its section and replacement boundary,
 `AntiXrayShadowRuntime` may create a read-only section evaluation. It reads
-the five accepted v2 terrain candidates once for that section. For each v1
-protected candidate, it:
+the five accepted v2 terrain candidates once for that section.
 
-1. maps the real Minecraft block state to a supported domain identity;
-2. collects observation paths from the active camera using loaded chunks only;
-3. applies the accepted observation policy;
-4. applies protection and replacement policy;
-5. compares the discarded v2 hide decision with the v1 decision.
+The section evaluation may shadow-evaluate at most one v2-supported protected
+candidate. V1-only candidates are mapped as unsupported and do not consume
+that budget. Once a supported candidate enters evaluation, the budget is
+consumed even if evaluation fails. Every later candidate skips observation
+collection and v2 policy evaluation.
+
+For the single selected candidate, the shadow path:
+
+1. collects observation paths from the active camera using loaded chunks only;
+2. applies the accepted observation policy;
+3. applies protection and replacement policy;
+4. compares the discarded v2 hide decision with the v1 decision.
 
 The comparison result is internal only. It is available to focused tests and a
 development debugger; there is no persistent state, production telemetry, or
@@ -41,8 +47,9 @@ serialized. No v2 result is used by `setBlockState`, section writing, packet
 construction, reveal updates, or world state.
 
 Unsupported legacy v1 targets, including the geode family and tuff slab, yield
-`V2_CANNOT_EVALUATE`. Runtime exceptions in v2 collection or policy
-coordination also yield that result and cannot escape into v1 serialization.
+`V2_CANNOT_EVALUATE`. Property access, mapping, collection, policy
+coordination, and comparison are all contained by the shadow boundary.
+Shadow failures cannot escape into v1 serialization.
 Unavailable loaded-chunk reads become `UNKNOWN` facts and therefore preserve
 the accepted fail-visible v2 decision.
 
@@ -68,10 +75,11 @@ Shadow work occurs only when the opt-in property is enabled and only after the
 existing v1 fast exits. A section scan still inspects at most 4096 cells.
 Accepted replacement terrain is collected once per participating section.
 
-Each supported protected target may produce one center sample and up to three
-observer-facing face samples. Each sample traverses every voxel cell between
-the current camera eye and the target until it reaches the target or missing
-data. The same work can repeat whenever Minecraft transmits that section.
+At most one supported protected target per participating section may produce
+one center sample and up to three observer-facing face samples. Each sample
+traverses every voxel cell between the current camera eye and the target until
+it reaches the target or missing data. The bounded work can repeat whenever
+Minecraft transmits that section.
 
 This establishes a potentially material hot-path cost. The mission therefore
 does not enable shadow mode by default, add caching, retain cross-section

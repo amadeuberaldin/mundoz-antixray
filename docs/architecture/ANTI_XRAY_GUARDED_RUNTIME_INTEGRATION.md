@@ -56,8 +56,10 @@ construction, reveal updates, or world state.
 
 Unsupported legacy v1 targets, including the geode family and tuff slab, yield
 `V2_CANNOT_EVALUATE`. Property access, mapping, collection, policy
-coordination, and comparison are all contained by the shadow boundary.
-Shadow failures cannot escape into v1 serialization.
+coordination, and comparison are all contained by the shadow boundary. If
+reading the shadow activation system property fails for any reason, activation
+resolves safely to disabled. Shadow failures cannot escape into v1
+serialization.
 Unavailable loaded-chunk reads become `UNKNOWN` facts and therefore preserve
 the accepted fail-visible v2 decision.
 

@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -103,8 +104,12 @@ class AntiXrayObfuscatorShadowIsolationTest {
 
         ServerChunkCache chunkSource = mock(ServerChunkCache.class);
         when(fixture.level().getChunkSource()).thenReturn(chunkSource);
-        when(chunkSource.getChunkNow(any(Integer.class), any(Integer.class)))
-                .thenReturn(null);
+        when(chunkSource.getChunkNow(anyInt(), anyInt())).thenReturn(
+                fixture.chunk()
+        );
+        when(fixture.chunk().getBlockState(any(BlockPos.class))).thenReturn(
+                Blocks.STONE.defaultBlockState()
+        );
 
         byte[] disabled = serialize(section, fixture, false);
         byte[] enabled = serialize(section, fixture, true);

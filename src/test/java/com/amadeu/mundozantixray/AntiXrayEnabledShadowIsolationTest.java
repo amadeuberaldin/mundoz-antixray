@@ -22,27 +22,29 @@ import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.chunk.PalettedContainer;
 import net.minecraft.world.level.chunk.Strategy;
 import net.minecraft.world.phys.Vec3;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
-class AntiXrayObfuscatorShadowIsolationTest {
+class AntiXrayEnabledShadowIsolationTest {
     static {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
     }
 
-    @AfterEach
-    void clearRuntimeState() {
-        AntiXrayContext.clear();
-        System.clearProperty(AntiXrayShadowRuntime.ENABLED_PROPERTY);
+    @Test
+    void startupActivationIsEnabledForThisSuite() {
+        assertTrue(AntiXrayShadowRuntime.isEnabled());
     }
 
     @Test
@@ -126,10 +128,22 @@ class AntiXrayObfuscatorShadowIsolationTest {
             RuntimeFixture fixture,
             boolean shadowEnabled
     ) {
-        System.setProperty(
-                AntiXrayShadowRuntime.ENABLED_PROPERTY,
-                Boolean.toString(shadowEnabled)
-        );
+        if (!shadowEnabled) {
+            try (MockedStatic<AntiXrayShadowRuntime> shadowRuntime =
+                         mockStatic(AntiXrayShadowRuntime.class, CALLS_REAL_METHODS)) {
+                shadowRuntime.when(AntiXrayShadowRuntime::isEnabled)
+                        .thenReturn(false);
+                return serialize(section, fixture);
+            }
+        }
+
+        return serialize(section, fixture);
+    }
+
+    private static byte[] serialize(
+            LevelChunkSection section,
+            RuntimeFixture fixture
+    ) {
         AntiXrayContext.set(
                 fixture.player(),
                 fixture.level(),

@@ -25,37 +25,31 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 final class AntiXrayShadowRuntime {
     static final String ENABLED_PROPERTY = "mundoz.antixray.v2-shadow";
-
+    private static final boolean ENABLED = parseEnabled(
+            System.getProperty(ENABLED_PROPERTY)
+    );
 
     private AntiXrayShadowRuntime() {}
 
+    static boolean isEnabled() {
+        return ENABLED;
+    }
+
+    static boolean parseEnabled(String propertyValue) {
+        return Boolean.parseBoolean(propertyValue);
+    }
+
     static SectionEvaluation beginSection(LevelChunkSection section) {
-        return beginSection(() -> {
+        try {
             List<ReplacementRepresentation> representations =
                     new ReplacementContextMapper().mapAvailableRepresentations(
                             new MinecraftSectionReplacementCandidateSource()
                                     .candidatesFrom(section)
                     );
             return new SectionEvaluation(evaluator(), representations);
-        });
-    }
-
-    static SectionEvaluation beginSection(
-            Supplier<SectionEvaluation> enabledEvaluation
-    ) {
-        try {
-            if (!Boolean.parseBoolean(System.getProperty(
-                    ENABLED_PROPERTY,
-                    "false"
-            ))) {
-                return SectionEvaluation.disabled();
-            }
-
-            return enabledEvaluation.get();
         } catch (Throwable shadowFailure) {
             return SectionEvaluation.disabled();
         }

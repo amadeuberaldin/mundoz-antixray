@@ -20,7 +20,6 @@ import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.level.block.Blocks;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -35,37 +34,35 @@ class AntiXrayShadowRuntimeTest {
         Bootstrap.bootStrap();
     }
 
-    private String originalProperty;
-
-    @BeforeEach
-    void rememberProperty() {
-        originalProperty = System.getProperty(
-                AntiXrayShadowRuntime.ENABLED_PROPERTY
-        );
-    }
-
     @AfterEach
-    void restoreProperty() {
-        if (originalProperty == null) {
-            System.clearProperty(AntiXrayShadowRuntime.ENABLED_PROPERTY);
-        } else {
-            System.setProperty(
-                    AntiXrayShadowRuntime.ENABLED_PROPERTY,
-                    originalProperty
-            );
-        }
-    }
-
-    @Test
-    void absentPropertyDoesNotCreateEnabledShadowEvaluation() {
+    void clearProperty() {
         System.clearProperty(AntiXrayShadowRuntime.ENABLED_PROPERTY);
-        assertDisabledPropertyDoesNotInvokeFactory();
     }
 
     @Test
-    void falsePropertyDoesNotCreateEnabledShadowEvaluation() {
-        System.setProperty(AntiXrayShadowRuntime.ENABLED_PROPERTY, "false");
-        assertDisabledPropertyDoesNotInvokeFactory();
+    void absentStartupPropertyResolvesToDisabled() {
+        assertEquals(false, AntiXrayShadowRuntime.parseEnabled(null));
+    }
+
+    @Test
+    void explicitFalseStartupPropertyResolvesToDisabled() {
+        assertEquals(false, AntiXrayShadowRuntime.parseEnabled("false"));
+    }
+
+    @Test
+    void explicitTrueStartupPropertyResolvesToEnabled() {
+        assertEquals(true, AntiXrayShadowRuntime.parseEnabled("true"));
+    }
+
+    @Test
+    void productionActivationIsImmutableAfterInitialization() {
+        boolean startupDecision = AntiXrayShadowRuntime.isEnabled();
+        System.setProperty(
+                AntiXrayShadowRuntime.ENABLED_PROPERTY,
+                Boolean.toString(!startupDecision)
+        );
+
+        assertEquals(startupDecision, AntiXrayShadowRuntime.isEnabled());
     }
 
     @Test
@@ -148,22 +145,6 @@ class AntiXrayShadowRuntimeTest {
                         Blocks.DIAMOND_ORE.defaultBlockState()
                 )
         );
-    }
-
-    private static void assertDisabledPropertyDoesNotInvokeFactory() {
-        AtomicInteger factories = new AtomicInteger();
-
-        AntiXrayShadowRuntime.SectionEvaluation evaluation =
-                AntiXrayShadowRuntime.beginSection(() -> {
-                    factories.incrementAndGet();
-                    throw new AssertionError("must remain disabled");
-                });
-
-        assertEquals(
-                RuntimeDecisionComparison.V2_CANNOT_EVALUATE,
-                compare(evaluation, Blocks.DIAMOND_ORE.defaultBlockState())
-        );
-        assertEquals(0, factories.get());
     }
 
     private static AntiXrayShadowRuntime.SectionEvaluation evaluation(

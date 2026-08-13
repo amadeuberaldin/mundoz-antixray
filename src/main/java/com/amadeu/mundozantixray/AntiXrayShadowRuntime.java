@@ -68,10 +68,7 @@ final class AntiXrayShadowRuntime {
             List<ReplacementRepresentation> representations =
                     new ReplacementContextMapper().mapAvailableRepresentations(
                             new MinecraftSectionReplacementCandidateSource().candidatesFrom(section));
-            MinecraftObservationPathCollector collector = observationCollector();
-            return new SectionEvaluation(
-                    evaluator(collector), representations, collector
-            );
+            return new SectionEvaluation(evaluator(), representations);
         } catch (Throwable shadowFailure) {
             recordFailure();
             return SectionEvaluation.disabled();
@@ -81,28 +78,18 @@ final class AntiXrayShadowRuntime {
     static final class SectionEvaluation {
         private final MinecraftRuntimeShadowEvaluator evaluator;
         private final List<ReplacementRepresentation> representations;
-        private final MinecraftObservationPathCollector traceCollector;
         private boolean candidateEvaluated;
 
         SectionEvaluation(
                 MinecraftRuntimeShadowEvaluator evaluator,
                 List<ReplacementRepresentation> representations
         ) {
-            this(evaluator, representations, null);
-        }
-
-        SectionEvaluation(
-                MinecraftRuntimeShadowEvaluator evaluator,
-                List<ReplacementRepresentation> representations,
-                MinecraftObservationPathCollector traceCollector
-        ) {
             this.evaluator = evaluator;
             this.representations = representations;
-            this.traceCollector = traceCollector;
         }
 
         static SectionEvaluation disabled() {
-            return new SectionEvaluation(null, List.of(), null);
+            return new SectionEvaluation(null, List.of());
         }
 
         RuntimeDecisionComparison compare(
@@ -137,24 +124,15 @@ final class AntiXrayShadowRuntime {
                 }
 
                 candidateEvaluated = true;
-                BlockPos target = new BlockPos(targetX, targetY, targetZ);
-                if (traceCollector != null && shouldTraceSafely(level, target)) {
-                    RuntimeDecisionComparison traced = trace(
-                            level, player, target, state, v1Hides, diagnosticsEnabled
-                    );
-                    if (traced != null) {
-                        return traced;
-                    }
-                }
                 if (!diagnosticsEnabled) {
                     return evaluator.compare(level, player,
-                            target, state,
+                            new BlockPos(targetX, targetY, targetZ), state,
                             representations, v1Hides);
                 }
 
                 long startedNanos = ShadowRuntimeDiagnostics.nanoTime();
                 MinecraftRuntimeShadowEvaluator.DiagnosticOutcome outcome = evaluator.evaluate(
-                        level, player, target,
+                        level, player, new BlockPos(targetX, targetY, targetZ),
                         state, representations, v1Hides);
                 recordOutcome(outcome, ShadowRuntimeDiagnostics.nanoTime() - startedNanos);
                 return outcome.comparison();
@@ -164,57 +142,6 @@ final class AntiXrayShadowRuntime {
                 }
                 return RuntimeDecisionComparison.V2_CANNOT_EVALUATE;
             }
-        }
-
-        private boolean shouldTraceSafely(
-                ServerLevel level,
-                BlockPos target
-        ) {
-            try {
-                return ShadowPathDiagnostics.shouldTrace(level, target);
-            } catch (Throwable diagnosticFailure) {
-                return false;
-            }
-        }
-
-        private RuntimeDecisionComparison trace(
-                ServerLevel level,
-                ServerPlayer player,
-                BlockPos target,
-                BlockState state,
-                boolean v1Hides,
-                boolean diagnosticsEnabled
-        ) {
-            net.minecraft.world.entity.Entity camera;
-            MinecraftObservationPathCollector.TraceResult trace;
-            MinecraftRuntimeShadowEvaluator.DiagnosticOutcome outcome;
-            long startedNanos = diagnosticsEnabled
-                    ? ShadowRuntimeDiagnostics.nanoTime()
-                    : 0L;
-            try {
-                camera = player.getCamera();
-                trace = traceCollector.collectTrace(level, camera, target);
-                outcome = evaluator.evaluate(
-                        state, representations, v1Hides, trace::contexts
-                );
-            } catch (Throwable diagnosticFailure) {
-                return null;
-            }
-
-            if (diagnosticsEnabled) {
-                recordOutcome(
-                        outcome,
-                        ShadowRuntimeDiagnostics.nanoTime() - startedNanos
-                );
-            }
-            try {
-                ShadowPathDiagnostics.report(
-                        level, player, camera, target, state, v1Hides, trace, outcome
-                );
-            } catch (Throwable diagnosticFailure) {
-                // Detailed reporting cannot change the computed shadow result.
-            }
-            return outcome.comparison();
         }
     }
 
@@ -270,11 +197,9 @@ final class AntiXrayShadowRuntime {
         }
     }
 
-    private static MinecraftRuntimeShadowEvaluator evaluator(
-            MinecraftObservationPathCollector collector
-    ) {
+    private static MinecraftRuntimeShadowEvaluator evaluator() {
         return new MinecraftRuntimeShadowEvaluator(
-                collector::collect,
+                observationCollector()::collect,
                 new ShadowEvaluationService(
                         new ObservationPathEvaluationService(
                                 new ObservationEvaluationService(new DefaultObservationPolicy())),

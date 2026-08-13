@@ -151,4 +151,3 @@ class V1ProtocolCompressionCharacterizationTest {
     private record Unit(boolean eligible,int marker,int compressionBytes,int frameBytes,int finalBytes){}
     private record Result(String name,int originalSection,int v1Section,int originalPayload,int v1Payload,boolean originalEligible,boolean v1Eligible,int originalCompression,int v1Compression,int originalFrame,int v1Frame,int originalFinal,int v1Final){}
 }
-

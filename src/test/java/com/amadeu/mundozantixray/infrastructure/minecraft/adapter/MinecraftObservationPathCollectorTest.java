@@ -130,6 +130,58 @@ class MinecraftObservationPathCollectorTest {
     }
 
     @Test
+    void traceReconstructsSamplesReadsContextsAndObserverOrigin() {
+        Vec3 cameraEye = new Vec3(0.5D, 3.62D, 0.5D);
+        BlockPos target = BlockPos.ZERO;
+        MinecraftObservationPathCollector.TraceResult trace = collector.collectTrace(
+                cameraEye,
+                target,
+                position -> Optional.of(position.equals(new BlockPos(0, 1, 0))
+                        ? Blocks.COPPER_GRATE.asList().getFirst().defaultBlockState()
+                        : Blocks.AIR.defaultBlockState())
+        );
+
+        assertEquals(cameraEye, trace.cameraEye());
+        assertEquals(new BlockPos(0, 3, 0), trace.observerBlockPos());
+        assertEquals(trace.samples().size(), trace.contexts().size());
+        assertEquals(2, trace.samples().size());
+        for (int index = 0; index < trace.samples().size(); index++) {
+            var sample = trace.samples().get(index);
+            var context = trace.contexts().get(index);
+            assertEquals(index, sample.index());
+            assertEquals(trace.observerBlockPos(),
+                    BlockPositionMapper.toMinecraft(context.observerPosition()));
+            assertEquals(trace.observerBlockPos(), sample.visited().getFirst().position());
+            assertEquals(sample.visited().stream()
+                            .map(MinecraftObservationPathCollector.VisitedBlock::behavior)
+                            .toList(),
+                    context.pathBeforeTarget());
+            assertEquals(ObservationPathBehavior.PASS_THROUGH,
+                    sample.visited().getLast().behavior());
+            assertEquals(new BlockPos(0, 1, 0),
+                    sample.visited().getLast().position());
+        }
+    }
+
+    @Test
+    void tracePreservesUnavailableReadAndStopsSample() {
+        var trace = collector.collectTrace(
+                ORIGIN,
+                new BlockPos(5, 0, 0),
+                position -> position.getX() == 2
+                        ? Optional.empty()
+                        : Optional.of(Blocks.AIR.defaultBlockState())
+        );
+
+        for (var sample : trace.samples()) {
+            var unavailable = sample.visited().getLast();
+            assertEquals(new BlockPos(2, 0, 0), unavailable.position());
+            assertEquals(Optional.empty(), unavailable.state());
+            assertEquals(ObservationPathBehavior.UNKNOWN, unavailable.behavior());
+        }
+    }
+
+    @Test
     void contextsAndPathsAreImmutable() {
         List<ObservationContext> contexts = collector.collect(
                 ORIGIN,

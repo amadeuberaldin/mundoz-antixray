@@ -1,5 +1,7 @@
 package com.amadeu.mundozantixray;
 
+import com.amadeu.mundozantixray.infrastructure.minecraft.adapter.MinecraftRuntimeShadowEvaluator;
+
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import net.minecraft.SharedConstants;
@@ -23,6 +25,7 @@ import net.minecraft.world.level.chunk.PalettedContainer;
 import net.minecraft.world.level.chunk.Strategy;
 import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -33,7 +36,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 class AntiXrayEnabledShadowIsolationTest {
@@ -123,7 +128,35 @@ class AntiXrayEnabledShadowIsolationTest {
         );
     }
 
-    private static byte[] serialize(
+    @Test
+    void diagnosticsDisabledDoNotParticipateInRealShadowExecution() {
+        LevelChunkSection section = sectionWith(Blocks.STONE.defaultBlockState());
+        RuntimeFixture fixture = runtimeFor(section);
+        Entity camera = mock(Entity.class);
+        when(fixture.player().getCamera()).thenReturn(camera);
+        when(camera.getEyePosition()).thenReturn(new Vec3(-2.0D, 0.5D, 0.5D));
+        ServerChunkCache chunkSource = mock(ServerChunkCache.class);
+        when(fixture.level().getChunkSource()).thenReturn(chunkSource);
+        when(chunkSource.getChunkNow(anyInt(), anyInt())).thenReturn(fixture.chunk());
+        when(fixture.chunk().getBlockState(any(BlockPos.class))).thenReturn(
+                Blocks.STONE.defaultBlockState());
+
+        try (MockedStatic<ShadowRuntimeDiagnostics> diagnostics = mockStatic(
+                ShadowRuntimeDiagnostics.class, CALLS_REAL_METHODS);
+             MockedConstruction<MinecraftRuntimeShadowEvaluator.DiagnosticOutcome> outcomes =
+                     mockConstruction(MinecraftRuntimeShadowEvaluator.DiagnosticOutcome.class);
+             MockedConstruction<ShadowRuntimeValidationReporter> reporters =
+                     mockConstruction(ShadowRuntimeValidationReporter.class)) {
+            serialize(section, fixture, true);
+
+            diagnostics.verify(ShadowRuntimeDiagnostics::aggregate, never());
+            diagnostics.verify(ShadowRuntimeDiagnostics::nanoTime, never());
+            assertTrue(outcomes.constructed().isEmpty());
+            assertTrue(reporters.constructed().isEmpty());
+        }
+    }
+
+    static byte[] serialize(
             LevelChunkSection section,
             RuntimeFixture fixture,
             boolean shadowEnabled
@@ -140,7 +173,7 @@ class AntiXrayEnabledShadowIsolationTest {
         return serialize(section, fixture);
     }
 
-    private static byte[] serialize(
+    static byte[] serialize(
             LevelChunkSection section,
             RuntimeFixture fixture
     ) {
@@ -160,7 +193,7 @@ class AntiXrayEnabledShadowIsolationTest {
         }
     }
 
-    private static RuntimeFixture runtimeFor(LevelChunkSection section) {
+    static RuntimeFixture runtimeFor(LevelChunkSection section) {
         ServerLevel level = mock(ServerLevel.class);
         ServerPlayer player = mock(ServerPlayer.class);
         LevelChunk chunk = mock(LevelChunk.class);
@@ -179,7 +212,7 @@ class AntiXrayEnabledShadowIsolationTest {
         return new RuntimeFixture(level, player, chunk);
     }
 
-    private static LevelChunkSection sectionWith(BlockState terrain) {
+    static LevelChunkSection sectionWith(BlockState terrain) {
         PalettedContainer<BlockState> states = new PalettedContainer<>(
                 Blocks.AIR.defaultBlockState(),
                 Strategy.createForBlockStates(Block.BLOCK_STATE_REGISTRY)
@@ -212,7 +245,7 @@ class AntiXrayEnabledShadowIsolationTest {
         return section;
     }
 
-    private record RuntimeFixture(
+    record RuntimeFixture(
             ServerLevel level,
             ServerPlayer player,
             LevelChunk chunk

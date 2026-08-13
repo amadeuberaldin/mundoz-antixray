@@ -82,6 +82,26 @@ class MinecraftRuntimeShadowEvaluatorTest {
         );
     }
 
+    @Test
+    void classifiesAlreadyProducedDiagnosticOutcomes() {
+        assertEquals(MinecraftRuntimeShadowEvaluator.DiagnosticKind.UNAVAILABLE,
+                evaluator.evaluate(Blocks.DIAMOND_ORE.defaultBlockState(),
+                        List.of(ReplacementRepresentation.STONE), true,
+                        () -> contexts(ObservationPathBehavior.UNKNOWN)).kind());
+        assertEquals(MinecraftRuntimeShadowEvaluator.DiagnosticKind.MISSING_REPLACEMENT,
+                evaluator.evaluate(Blocks.DIAMOND_ORE.defaultBlockState(),
+                        List.of(), true,
+                        () -> contexts(ObservationPathBehavior.OCCLUDING)).kind());
+        assertEquals(MinecraftRuntimeShadowEvaluator.DiagnosticKind.UNSUPPORTED,
+                evaluator.evaluate(Blocks.AMETHYST_BLOCK.defaultBlockState(),
+                        List.of(ReplacementRepresentation.STONE), true,
+                        () -> contexts(ObservationPathBehavior.OCCLUDING)).kind());
+        assertEquals(MinecraftRuntimeShadowEvaluator.DiagnosticKind.FAILURE,
+                evaluator.evaluate(Blocks.DIAMOND_ORE.defaultBlockState(),
+                        List.of(ReplacementRepresentation.STONE), true,
+                        () -> { throw new IllegalStateException("unavailable input"); }).kind());
+    }
+
     private static List<ObservationContext> contexts(
             ObservationPathBehavior behavior
     ) {

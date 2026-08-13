@@ -39,6 +39,9 @@ tasks.withType(JavaCompile).configureEach {
 tasks.test {
     useJUnitPlatform()
     exclude "**/AntiXrayEnabledShadowIsolationTest.class"
+    exclude "**/ShadowValidationEnabledRuntimeTest.class"
+    exclude "**/ShadowValidationExplicitlyDisabledTest.class"
+    exclude "**/ShadowValidationOnlyEnabledTest.class"
 }
 
 tasks.register("shadowEnabledTest", Test) {
@@ -52,8 +55,45 @@ tasks.register("shadowEnabledTest", Test) {
     shouldRunAfter tasks.test
 }
 
+tasks.register("shadowValidationEnabledTest", Test) {
+    description = "Runs runtime tests with shadow validation enabled at startup."
+    group = "verification"
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform()
+    include "**/ShadowValidationEnabledRuntimeTest.class"
+    systemProperty "mundoz.antixray.v2-shadow", "true"
+    systemProperty "mundoz.antixray.v2-shadow-validation", "true"
+    shouldRunAfter tasks.shadowEnabledTest
+}
+
+tasks.register("shadowValidationExplicitlyDisabledTest", Test) {
+    description = "Runs validation activation tests with explicit startup false."
+    group = "verification"
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform()
+    include "**/ShadowValidationExplicitlyDisabledTest.class"
+    systemProperty "mundoz.antixray.v2-shadow-validation", "false"
+    shouldRunAfter tasks.shadowValidationEnabledTest
+}
+
+tasks.register("shadowValidationOnlyEnabledTest", Test) {
+    description = "Proves validation activation does not activate shadow execution."
+    group = "verification"
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform()
+    include "**/ShadowValidationOnlyEnabledTest.class"
+    systemProperty "mundoz.antixray.v2-shadow-validation", "true"
+    shouldRunAfter tasks.shadowValidationExplicitlyDisabledTest
+}
+
 tasks.check {
     dependsOn tasks.shadowEnabledTest
+    dependsOn tasks.shadowValidationEnabledTest
+    dependsOn tasks.shadowValidationExplicitlyDisabledTest
+    dependsOn tasks.shadowValidationOnlyEnabledTest
 }
 
 version = project.mod_version

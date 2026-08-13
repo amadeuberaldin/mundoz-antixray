@@ -35,13 +35,7 @@ public final class ShadowEvaluationService {
             List<ObservationContext> observationContexts,
             List<ReplacementRepresentation> availableRepresentations
     ) {
-        Objects.requireNonNull(block, "block");
-        Objects.requireNonNull(observationContexts, "observationContexts");
-        Objects.requireNonNull(
-                availableRepresentations,
-                "availableRepresentations"
-        );
-
+        validate(block, observationContexts, availableRepresentations);
         if (observationService.evaluate(observationContexts)
                 == ObservationDecision.OBSERVED) {
             return false;
@@ -53,4 +47,42 @@ public final class ShadowEvaluationService {
         );
         return replacement.decision() == ReplacementDecision.REPLACE;
     }
+
+    public Evaluation evaluate(
+            BlockIdentity block,
+            List<ObservationContext> observationContexts,
+            List<ReplacementRepresentation> availableRepresentations
+    ) {
+        validate(block, observationContexts, availableRepresentations);
+        if (observationService.evaluate(observationContexts)
+                == ObservationDecision.OBSERVED) {
+            return new Evaluation(false, false);
+        }
+
+        ReplacementResult replacement = replacementService.evaluate(
+                block,
+                availableRepresentations
+        );
+        boolean shouldHide = replacement.decision()
+                == ReplacementDecision.REPLACE;
+        return new Evaluation(shouldHide, !shouldHide);
+    }
+
+    private static void validate(
+            BlockIdentity block,
+            List<ObservationContext> observationContexts,
+            List<ReplacementRepresentation> availableRepresentations
+    ) {
+        Objects.requireNonNull(block, "block");
+        Objects.requireNonNull(observationContexts, "observationContexts");
+        Objects.requireNonNull(
+                availableRepresentations,
+                "availableRepresentations"
+        );
+    }
+
+    public record Evaluation(
+            boolean shouldHide,
+            boolean missingReplacement
+    ) {}
 }

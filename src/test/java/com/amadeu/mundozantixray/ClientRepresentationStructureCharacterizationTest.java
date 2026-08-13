@@ -90,4 +90,3 @@ class ClientRepresentationStructureCharacterizationTest {
     private record Comparison(Fixture fixture,BlockState[]authoritativeBefore,Metrics original,Metrics v1){Stable stable(){return new Stable(fixture.name(),original.distinct(),v1.distinct(),original.bits(),v1.bits(),original.solidStates(),v1.solidStates(),original.modelStates(),v1.modelStates(),original.air(),v1.air(),original.fluidStates(),v1.fluidStates());}}
     private record Stable(String name,int originalDistinct,int v1Distinct,int originalBits,int v1Bits,int originalSolid,int v1Solid,int originalModel,int v1Model,int originalAir,int v1Air,int originalFluid,int v1Fluid){}
 }
-

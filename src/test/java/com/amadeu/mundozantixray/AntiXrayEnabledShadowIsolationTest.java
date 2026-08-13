@@ -43,6 +43,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 class AntiXrayEnabledShadowIsolationTest {
@@ -265,6 +266,75 @@ class AntiXrayEnabledShadowIsolationTest {
             return Blocks.AIR.defaultBlockState();
         }
         return Blocks.END_STONE.defaultBlockState();
+    }
+
+    @Test
+    void targetedPathDiagnosticUsesAdmittedCandidateWithoutChangingComparison() {
+        LevelChunkSection section = sectionWith(Blocks.STONE.defaultBlockState());
+        RuntimeFixture fixture = runtimeFor(section);
+        Entity camera = mock(Entity.class);
+        when(fixture.player().getCamera()).thenReturn(camera);
+        when(camera.getEyePosition()).thenReturn(new Vec3(0.5D, 3.62D, 0.5D));
+        ServerChunkCache chunkSource = mock(ServerChunkCache.class);
+        when(fixture.level().getChunkSource()).thenReturn(chunkSource);
+        when(chunkSource.getChunkNow(anyInt(), anyInt())).thenReturn(fixture.chunk());
+        when(fixture.chunk().getBlockState(any(BlockPos.class))).thenAnswer(
+                invocation -> verticalShaftState(
+                        invocation.getArgument(0),
+                        Blocks.COPPER_GRATE.asList().getFirst().defaultBlockState()
+                )
+        );
+
+        try (MockedStatic<ShadowPathDiagnostics> diagnostics =
+                     mockStatic(ShadowPathDiagnostics.class)) {
+            diagnostics.when(() -> ShadowPathDiagnostics.shouldTrace(
+                    fixture.level(), BlockPos.ZERO)).thenReturn(true);
+            AntiXrayShadowRuntime.SectionEvaluation evaluation =
+                    AntiXrayShadowRuntime.beginSection(section);
+
+            assertSame(RuntimeDecisionComparison.V1_HIDES_V2_REVEALS,
+                    evaluation.compare(
+                            fixture.level(), fixture.player(), 0, 0, 0,
+                            Blocks.DIAMOND_ORE.defaultBlockState(), true
+                    ));
+            diagnostics.verify(() -> ShadowPathDiagnostics.report(
+                    any(), any(), any(), any(), any(),
+                    org.mockito.ArgumentMatchers.eq(true), any(), any()
+            ), times(1));
+        }
+    }
+
+    @Test
+    void pathDiagnosticFailureCannotChangeNormalShadowComparison() {
+        LevelChunkSection section = sectionWith(Blocks.STONE.defaultBlockState());
+        RuntimeFixture fixture = runtimeFor(section);
+        Entity camera = mock(Entity.class);
+        when(fixture.player().getCamera()).thenReturn(camera);
+        when(camera.getEyePosition()).thenReturn(new Vec3(0.5D, 3.62D, 0.5D));
+        ServerChunkCache chunkSource = mock(ServerChunkCache.class);
+        when(fixture.level().getChunkSource()).thenReturn(chunkSource);
+        when(chunkSource.getChunkNow(anyInt(), anyInt())).thenReturn(fixture.chunk());
+        when(fixture.chunk().getBlockState(any(BlockPos.class))).thenReturn(
+                Blocks.AIR.defaultBlockState()
+        );
+
+        try (MockedStatic<ShadowPathDiagnostics> diagnostics =
+                     mockStatic(ShadowPathDiagnostics.class)) {
+            diagnostics.when(() -> ShadowPathDiagnostics.shouldTrace(
+                    fixture.level(), BlockPos.ZERO)).thenReturn(true);
+            diagnostics.when(() -> ShadowPathDiagnostics.report(
+                    any(), any(), any(), any(), any(),
+                    org.mockito.ArgumentMatchers.eq(true), any(), any()
+            )).thenThrow(new IllegalStateException("diagnostic unavailable"));
+            AntiXrayShadowRuntime.SectionEvaluation evaluation =
+                    AntiXrayShadowRuntime.beginSection(section);
+
+            assertSame(RuntimeDecisionComparison.V1_HIDES_V2_REVEALS,
+                    evaluation.compare(
+                            fixture.level(), fixture.player(), 0, 0, 0,
+                            Blocks.DIAMOND_ORE.defaultBlockState(), true
+                    ));
+        }
     }
 
     static byte[] serialize(

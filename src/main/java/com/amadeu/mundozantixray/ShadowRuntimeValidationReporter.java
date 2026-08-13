@@ -20,6 +20,8 @@ final class ShadowRuntimeValidationReporter {
                     "AntiXray v2 shadow validation summary: "
                             + "sectionInitialization[count={},totalNanos={},maxNanos={}], "
                             + "evaluation[count={},totalNanos={},maxNanos={}], "
+                            + "bothReveal={}, bothHide={}, v1HidesV2Reveals={}, "
+                            + "v1RevealsV2Hides={}, "
                             + "agreement={}, disagreement={}, v2Observed={}, "
                             + "v2NotObserved={}, unsupported={}, unavailable={}, "
                             + "missingReplacement={}, failure={}",
@@ -29,6 +31,10 @@ final class ShadowRuntimeValidationReporter {
                     summary.evaluationCount(),
                     summary.evaluationTotalNanos(),
                     summary.evaluationMaxNanos(),
+                    summary.bothReveal(),
+                    summary.bothHide(),
+                    summary.v1HidesV2Reveals(),
+                    summary.v1RevealsV2Hides(),
                     summary.agreements(),
                     summary.disagreements(),
                     summary.v2Observed(),

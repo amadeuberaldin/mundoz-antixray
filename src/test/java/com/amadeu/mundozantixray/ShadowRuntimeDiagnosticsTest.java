@@ -55,6 +55,7 @@ class ShadowRuntimeDiagnosticsTest {
         aggregate.recordFailure(70L);
 
         assertEquals(new ShadowRuntimeDiagnostics.Summary(2L, 30L, 20L, 5L, 250L, 70L,
+                        1L, 1L, 2L, 0L,
                         2L, 2L, 2L, 2L, 1L, 1L, 1L, 1L),
                 aggregate.snapshot());
     }

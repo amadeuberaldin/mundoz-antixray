@@ -37,6 +37,7 @@ class ShadowRuntimeValidationReporterTest {
     private static ShadowRuntimeDiagnostics.Summary summary() {
         return new ShadowRuntimeDiagnostics.Summary(
                 1L, 2L, 2L, 1L, 3L, 3L,
+                1L, 0L, 0L, 0L,
                 1L, 0L, 0L, 1L, 0L, 0L, 0L, 0L);
     }
 }

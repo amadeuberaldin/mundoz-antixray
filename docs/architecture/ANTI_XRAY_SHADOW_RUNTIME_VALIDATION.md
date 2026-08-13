@@ -33,8 +33,8 @@ The process-lifetime aggregate contains only counters and timing totals:
   nanoseconds;
 - supported-candidate evaluation count, total nanoseconds, and maximum
   nanoseconds;
-- v1/v2 agreement and disagreement counts using the unchanged
-  `RuntimeDecisionComparison` categories;
+- counts for each existing comparable `RuntimeDecisionComparison` category,
+  plus their agreement and disagreement totals;
 - v2 observed and not-observed counts;
 - unsupported candidate, unavailable/UNKNOWN observation, missing replacement,
   and shadow failure counts.

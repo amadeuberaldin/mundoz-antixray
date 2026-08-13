@@ -20,14 +20,8 @@ public final class ShadowEvaluationService {
             ObservationPathEvaluationService observationService,
             ReplacementIntegrationService replacementService
     ) {
-        this.observationService = Objects.requireNonNull(
-                observationService,
-                "observationService"
-        );
-        this.replacementService = Objects.requireNonNull(
-                replacementService,
-                "replacementService"
-        );
+        this.observationService = Objects.requireNonNull(observationService, "observationService");
+        this.replacementService = Objects.requireNonNull(replacementService, "replacementService");
     }
 
     public boolean shouldHide(
@@ -35,22 +29,26 @@ public final class ShadowEvaluationService {
             List<ObservationContext> observationContexts,
             List<ReplacementRepresentation> availableRepresentations
     ) {
+        return evaluate(block, observationContexts, availableRepresentations).shouldHide();
+    }
+
+    public Evaluation evaluate(
+            BlockIdentity block,
+            List<ObservationContext> observationContexts,
+            List<ReplacementRepresentation> availableRepresentations
+    ) {
         Objects.requireNonNull(block, "block");
         Objects.requireNonNull(observationContexts, "observationContexts");
-        Objects.requireNonNull(
-                availableRepresentations,
-                "availableRepresentations"
-        );
+        Objects.requireNonNull(availableRepresentations, "availableRepresentations");
 
-        if (observationService.evaluate(observationContexts)
-                == ObservationDecision.OBSERVED) {
-            return false;
+        if (observationService.evaluate(observationContexts) == ObservationDecision.OBSERVED) {
+            return new Evaluation(false, false);
         }
 
-        ReplacementResult replacement = replacementService.evaluate(
-                block,
-                availableRepresentations
-        );
-        return replacement.decision() == ReplacementDecision.REPLACE;
+        ReplacementResult replacement = replacementService.evaluate(block, availableRepresentations);
+        boolean shouldHide = replacement.decision() == ReplacementDecision.REPLACE;
+        return new Evaluation(shouldHide, !shouldHide);
     }
+
+    public record Evaluation(boolean shouldHide, boolean missingReplacement) {}
 }

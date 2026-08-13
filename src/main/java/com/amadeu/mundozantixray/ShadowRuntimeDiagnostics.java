@@ -6,11 +6,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 final class ShadowRuntimeDiagnostics {
-    static final String ENABLED_PROPERTY =
-            "mundoz.antixray.v2-shadow-validation";
+    static final String ENABLED_PROPERTY = "mundoz.antixray.v2-shadow-validation";
     private static final boolean ENABLED = resolveEnabled(
-            () -> System.getProperty(ENABLED_PROPERTY)
-    );
+            () -> System.getProperty(ENABLED_PROPERTY));
     private static final Aggregate AGGREGATE = new Aggregate();
 
     private ShadowRuntimeDiagnostics() {}
@@ -58,6 +56,50 @@ final class ShadowRuntimeDiagnostics {
 
         void recordComparison(RuntimeDecisionComparison comparison, long elapsedNanos) {
             recordEvaluationTiming(elapsedNanos);
+            recordComparisonCounts(comparison);
+        }
+
+        void recordUnsupported() {
+            unsupported.incrementAndGet();
+        }
+
+        void recordUnavailable(RuntimeDecisionComparison comparison, long elapsedNanos) {
+            recordEvaluationTiming(elapsedNanos);
+            recordComparisonCounts(comparison);
+            unavailable.incrementAndGet();
+        }
+
+        void recordMissingReplacement(
+                RuntimeDecisionComparison comparison,
+                long elapsedNanos
+        ) {
+            recordEvaluationTiming(elapsedNanos);
+            recordComparisonCounts(comparison);
+            missingReplacement.incrementAndGet();
+        }
+
+        void recordFailure(long elapsedNanos) {
+            recordEvaluationTiming(elapsedNanos);
+            failures.incrementAndGet();
+        }
+
+        void recordFailure() {
+            failures.incrementAndGet();
+        }
+
+        Summary snapshot() {
+            return new Summary(sectionInitializationCount.get(),
+                    sectionInitializationTotalNanos.get(), sectionInitializationMaxNanos.get(),
+                    evaluationCount.get(), evaluationTotalNanos.get(), evaluationMaxNanos.get(),
+                    agreements.get(), disagreements.get(), v2Observed.get(), v2NotObserved.get(),
+                    unsupported.get(), unavailable.get(), missingReplacement.get(), failures.get());
+        }
+
+        private void recordEvaluationTiming(long elapsedNanos) {
+            recordTiming(evaluationCount, evaluationTotalNanos, evaluationMaxNanos, elapsedNanos);
+        }
+
+        private void recordComparisonCounts(RuntimeDecisionComparison comparison) {
             switch (comparison) {
                 case BOTH_REVEAL -> {
                     agreements.incrementAndGet();
@@ -77,39 +119,6 @@ final class ShadowRuntimeDiagnostics {
                 }
                 case V2_CANNOT_EVALUATE -> failures.incrementAndGet();
             }
-        }
-
-        void recordUnsupported() {
-            unsupported.incrementAndGet();
-        }
-
-        void recordUnavailable(long elapsedNanos) {
-            recordEvaluationTiming(elapsedNanos);
-            unavailable.incrementAndGet();
-            v2Observed.incrementAndGet();
-        }
-
-        void recordMissingReplacement(long elapsedNanos) {
-            recordEvaluationTiming(elapsedNanos);
-            missingReplacement.incrementAndGet();
-            v2Observed.incrementAndGet();
-        }
-
-        void recordFailure(long elapsedNanos) {
-            recordEvaluationTiming(elapsedNanos);
-            failures.incrementAndGet();
-        }
-
-        Summary snapshot() {
-            return new Summary(sectionInitializationCount.get(),
-                    sectionInitializationTotalNanos.get(), sectionInitializationMaxNanos.get(),
-                    evaluationCount.get(), evaluationTotalNanos.get(), evaluationMaxNanos.get(),
-                    agreements.get(), disagreements.get(), v2Observed.get(), v2NotObserved.get(),
-                    unsupported.get(), unavailable.get(), missingReplacement.get(), failures.get());
-        }
-
-        private void recordEvaluationTiming(long elapsedNanos) {
-            recordTiming(evaluationCount, evaluationTotalNanos, evaluationMaxNanos, elapsedNanos);
         }
 
         private static void recordTiming(AtomicLong count, AtomicLong total,

@@ -44,12 +44,13 @@ class ShadowRuntimeDiagnosticsTest {
         aggregate.recordComparison(RuntimeDecisionComparison.BOTH_HIDE, 30L);
         aggregate.recordComparison(RuntimeDecisionComparison.V1_HIDES_V2_REVEALS, 40L);
         aggregate.recordUnsupported();
-        aggregate.recordUnavailable(50L);
-        aggregate.recordMissingReplacement(60L);
+        aggregate.recordUnavailable(RuntimeDecisionComparison.BOTH_REVEAL, 50L);
+        aggregate.recordMissingReplacement(
+                RuntimeDecisionComparison.V1_HIDES_V2_REVEALS, 60L);
         aggregate.recordFailure(70L);
 
         assertEquals(new ShadowRuntimeDiagnostics.Summary(2L, 30L, 20L, 5L, 250L, 70L,
-                        1L, 1L, 3L, 1L, 1L, 1L, 1L, 1L),
+                        2L, 2L, 3L, 1L, 1L, 1L, 1L, 1L),
                 aggregate.snapshot());
     }
 }

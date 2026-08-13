@@ -9,8 +9,6 @@ public class MundoZAntiXrayMod implements ModInitializer {
 
     public static final String MOD_ID = "mundoz_antixray";
     private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-    private static final ShadowRuntimeValidationReporter VALIDATION_REPORTER =
-            new ShadowRuntimeValidationReporter();
 
     @Override
     public void onInitialize() {
@@ -30,7 +28,7 @@ public class MundoZAntiXrayMod implements ModInitializer {
                     if (!server.isDedicatedServer()) {
                         return;
                     }
-                    VALIDATION_REPORTER.report(
+                    ValidationReporterHolder.INSTANCE.report(
                             LOGGER,
                             ShadowRuntimeDiagnostics.aggregate().snapshot()
                     );
@@ -41,5 +39,10 @@ public class MundoZAntiXrayMod implements ModInitializer {
         } catch (Throwable diagnosticFailure) {
             // Validation reporting must never affect server initialization.
         }
+    }
+
+    private static final class ValidationReporterHolder {
+        private static final ShadowRuntimeValidationReporter INSTANCE =
+                new ShadowRuntimeValidationReporter();
     }
 }

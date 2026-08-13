@@ -95,3 +95,21 @@ behavior.
 
 The collector is inactive. It does not define packet, palette, chunk
 representation, reveal-event, caching, or runtime performance behavior.
+
+## Contextual Decision Lifetime
+
+An `ObservationDecision` describes whether a target is observable from one
+specific observation context. The decision is contextual and transient.
+`NOT_OBSERVED` means that the target is not observable from that context; it
+does not mean that the target is permanently hidden for that player.
+
+A later context may produce a different decision when, for example:
+
+- the player position changes;
+- the active camera position or orientation changes;
+- intervening world state changes;
+- a previously occluding block is removed;
+- another valid line of sight becomes available.
+
+A stored or represented result must therefore not be treated as permanently
+valid after its observation inputs change.

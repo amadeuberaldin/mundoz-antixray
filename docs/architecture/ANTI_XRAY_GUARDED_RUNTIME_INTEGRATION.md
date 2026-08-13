@@ -110,3 +110,24 @@ This integration does not approve:
 - enabling shadow evaluation by default;
 - adding caching, asynchronous work, or persistent telemetry;
 - replacing legacy runtime components.
+
+## Dynamic Reevaluation Limitation
+
+The guarded v2 path evaluates a candidate from the observation context that
+exists during the initial section-representation evaluation. It does not yet
+provide complete reevaluation when player movement, active-camera changes, or
+world changes later produce a different observation context.
+
+Controlled Minecraft 26.2 investigation confirmed that the copper-grate family
+is classified correctly and that a vertical path through a dry or waterlogged
+copper grate is observed when evaluated from the player position above it. An
+earlier not-observed result came from evaluation while the player was still far
+from the constructed target. Rejoining above the same target caused the initial
+evaluation to produce the expected observed result.
+
+Consequently, a previous `NOT_OBSERVED` decision can become stale. Dynamic
+observation reevaluation is required before v2 decisions can become
+authoritative for player representation. The trigger strategy, scan bounds,
+movement or camera criteria, scheduling, and state-retention model remain
+future design decisions. This document does not select an algorithm, radius,
+frequency, angle, cache, listener, or persistent per-player candidate set.

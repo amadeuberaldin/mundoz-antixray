@@ -1,5 +1,6 @@
 package com.amadeu.mundozantixray;
 
+import com.amadeu.mundozantixray.application.runtime.RuntimeDecisionComparison;
 import com.amadeu.mundozantixray.infrastructure.minecraft.adapter.MinecraftRuntimeShadowEvaluator;
 
 import io.netty.buffer.ByteBufUtil;
@@ -19,6 +20,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.chunk.PalettedContainer;
@@ -27,6 +29,8 @@ import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -154,6 +158,113 @@ class AntiXrayEnabledShadowIsolationTest {
             assertTrue(outcomes.constructed().isEmpty());
             assertTrue(reporters.constructed().isEmpty());
         }
+    }
+
+    @Test
+    void everyDryAndWaterloggedCopperGrateIsObservedAtShadowRuntimeBoundary() {
+        LevelChunkSection section = sectionWith(Blocks.STONE.defaultBlockState());
+        RuntimeFixture fixture = runtimeFor(section);
+        Entity camera = mock(Entity.class);
+        when(fixture.player().getCamera()).thenReturn(camera);
+        when(camera.getEyePosition()).thenReturn(new Vec3(0.5D, 0.5D, 0.5D));
+
+        ServerChunkCache chunkSource = mock(ServerChunkCache.class);
+        when(fixture.level().getChunkSource()).thenReturn(chunkSource);
+        when(chunkSource.getChunkNow(anyInt(), anyInt())).thenReturn(fixture.chunk());
+
+        for (Block grate : Blocks.COPPER_GRATE.asList()) {
+            for (boolean waterlogged : List.of(false, true)) {
+                BlockState grateState = grate.defaultBlockState().setValue(
+                        BlockStateProperties.WATERLOGGED,
+                        waterlogged
+                );
+                when(fixture.chunk().getBlockState(any(BlockPos.class))).thenAnswer(
+                        invocation -> invocation.<BlockPos>getArgument(0).getX() == 1
+                                ? grateState
+                                : Blocks.AIR.defaultBlockState()
+                );
+
+                AntiXrayShadowRuntime.SectionEvaluation evaluation =
+                        AntiXrayShadowRuntime.beginSection(section);
+
+                assertSame(
+                        RuntimeDecisionComparison.V1_HIDES_V2_REVEALS,
+                        evaluation.compare(
+                                fixture.level(),
+                                fixture.player(),
+                                3,
+                                0,
+                                0,
+                                Blocks.DIAMOND_ORE.defaultBlockState(),
+                                true
+                        ),
+                        grate + " waterlogged=" + waterlogged
+                );
+            }
+        }
+    }
+
+    @Test
+    void verticalCopperGrateShaftIsObservedAtShadowRuntimeBoundary() {
+        LevelChunkSection section = sectionWith(Blocks.STONE.defaultBlockState());
+        RuntimeFixture fixture = runtimeFor(section);
+        Entity camera = mock(Entity.class);
+        when(fixture.player().getCamera()).thenReturn(camera);
+
+        ServerChunkCache chunkSource = mock(ServerChunkCache.class);
+        when(fixture.level().getChunkSource()).thenReturn(chunkSource);
+        when(chunkSource.getChunkNow(anyInt(), anyInt())).thenReturn(fixture.chunk());
+
+        for (Block grate : Blocks.COPPER_GRATE.asList()) {
+            for (boolean waterlogged : List.of(false, true)) {
+                BlockState grateState = grate.defaultBlockState().setValue(
+                        BlockStateProperties.WATERLOGGED, waterlogged
+                );
+                when(fixture.chunk().getBlockState(any(BlockPos.class))).thenAnswer(
+                        invocation -> verticalShaftState(
+                                invocation.getArgument(0), grateState
+                        )
+                );
+                for (Vec3 origin : List.of(
+                        new Vec3(0.5D, 3.62D, 0.5D),
+                        new Vec3(1.5D, 3.62D, 0.5D),
+                        new Vec3(0.5D, 3.62D, 1.5D),
+                        new Vec3(1.5D, 3.62D, 1.5D)
+                )) {
+                    when(camera.getEyePosition()).thenReturn(origin);
+                    AntiXrayShadowRuntime.SectionEvaluation evaluation =
+                            AntiXrayShadowRuntime.beginSection(section);
+
+                    assertSame(
+                            RuntimeDecisionComparison.V1_HIDES_V2_REVEALS,
+                            evaluation.compare(
+                                    fixture.level(), fixture.player(),
+                                    0, 0, 0,
+                                    Blocks.DIAMOND_ORE.defaultBlockState(),
+                                    true
+                            ),
+                            grate + " waterlogged=" + waterlogged
+                                    + " origin=" + origin
+                    );
+                }
+            }
+        }
+    }
+
+    private static BlockState verticalShaftState(
+            BlockPos position,
+            BlockState grateState
+    ) {
+        if (position.equals(BlockPos.ZERO)) {
+            return Blocks.DIAMOND_ORE.defaultBlockState();
+        }
+        if (position.equals(new BlockPos(0, 1, 0))) {
+            return grateState;
+        }
+        if (position.getY() >= 2) {
+            return Blocks.AIR.defaultBlockState();
+        }
+        return Blocks.END_STONE.defaultBlockState();
     }
 
     static byte[] serialize(

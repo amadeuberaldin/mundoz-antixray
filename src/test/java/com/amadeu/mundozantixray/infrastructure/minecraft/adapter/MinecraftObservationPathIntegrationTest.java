@@ -2,6 +2,8 @@ package com.amadeu.mundozantixray.infrastructure.minecraft.adapter;
 
 import com.amadeu.mundozantixray.application.observation.ObservationPathEvaluationService;
 import com.amadeu.mundozantixray.domain.model.ObservationDecision;
+import com.amadeu.mundozantixray.domain.model.ObservationContext;
+import com.amadeu.mundozantixray.domain.model.ObservationPathBehavior;
 import com.amadeu.mundozantixray.domain.policy.DefaultObservationPolicy;
 import com.amadeu.mundozantixray.domain.service.ObservationEvaluationService;
 import net.minecraft.SharedConstants;
@@ -9,13 +11,18 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 class MinecraftObservationPathIntegrationTest {
     static {
@@ -65,8 +72,68 @@ class MinecraftObservationPathIntegrationTest {
     }
 
     @Test
+    void leverPathIsObserved() {
+        assertDecision(ObservationDecision.OBSERVED,
+                Blocks.AIR, Blocks.LEVER, Blocks.AIR);
+    }
+
+    @Test
+    void brewingStandPathIsObserved() {
+        assertDecision(ObservationDecision.OBSERVED,
+                Blocks.AIR, Blocks.BREWING_STAND, Blocks.AIR);
+    }
+
+    @Test
     void lavaBeforeTargetIsNotObserved() {
         assertDecision(ObservationDecision.NOT_OBSERVED, Blocks.AIR, Blocks.LAVA, Blocks.AIR);
+    }
+
+    @Test
+    void everyDryAndWaterloggedCopperGratePathIsObserved() {
+        MinecraftObservationPathClassifier classifier =
+                new MinecraftObservationPathClassifier();
+
+        for (Block grate : Blocks.COPPER_GRATE.asList()) {
+            for (boolean waterlogged : List.of(false, true)) {
+                BlockState expectedGrateState = grate.defaultBlockState().setValue(
+                        BlockStateProperties.WATERLOGGED, waterlogged
+                );
+                List<TraversedState> traversedStates = new ArrayList<>();
+
+                List<ObservationContext> contexts = collector.collect(
+                        ORIGIN, TARGET, position -> {
+                            BlockState state = position.getX() == 1
+                                    ? expectedGrateState
+                                    : Blocks.AIR.defaultBlockState();
+                            traversedStates.add(new TraversedState(position, state));
+                            return Optional.of(state);
+                        }
+                );
+
+                List<TraversedState> grateReads = traversedStates.stream()
+                        .filter(read -> read.position().equals(new BlockPos(1, 0, 0)))
+                        .toList();
+                String description = grate + " waterlogged=" + waterlogged;
+
+                assertFalse(grateReads.isEmpty(), description);
+                for (TraversedState grateRead : grateReads) {
+                    assertSame(expectedGrateState, grateRead.state(), description);
+                    assertEquals(ObservationPathBehavior.PASS_THROUGH,
+                            classifier.classify(grateRead.state()), description);
+                }
+                for (ObservationContext context : contexts) {
+                    assertEquals(List.of(
+                                    ObservationPathBehavior.PASS_THROUGH,
+                                    ObservationPathBehavior.PASS_THROUGH,
+                                    ObservationPathBehavior.PASS_THROUGH
+                            ), context.pathBeforeTarget(), description);
+                    assertFalse(context.pathBeforeTarget().contains(
+                            ObservationPathBehavior.OCCLUDING), description);
+                }
+                assertEquals(ObservationDecision.OBSERVED,
+                        evaluationService.evaluate(contexts), description);
+            }
+        }
     }
 
     @Test
@@ -124,4 +191,6 @@ class MinecraftObservationPathIntegrationTest {
                 )
         );
     }
+
+    private record TraversedState(BlockPos position, BlockState state) {}
 }

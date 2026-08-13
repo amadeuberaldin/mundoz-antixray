@@ -48,15 +48,20 @@ class ShadowRuntimeDiagnosticsTest {
         aggregate.recordSectionInitialization(20L);
         aggregate.recordComparison(RuntimeDecisionComparison.BOTH_HIDE, 30L);
         aggregate.recordComparison(RuntimeDecisionComparison.V1_HIDES_V2_REVEALS, 40L);
+        aggregate.recordComparison(RuntimeDecisionComparison.V1_REVEALS_V2_HIDES, 80L);
         aggregate.recordUnsupported();
         aggregate.recordUnavailable(RuntimeDecisionComparison.BOTH_REVEAL, 50L);
         aggregate.recordMissingReplacement(
                 RuntimeDecisionComparison.V1_HIDES_V2_REVEALS, 60L);
         aggregate.recordFailure(70L);
 
-        assertEquals(new ShadowRuntimeDiagnostics.Summary(2L, 30L, 20L, 5L, 250L, 70L,
-                        1L, 1L, 2L, 0L,
-                        2L, 2L, 2L, 2L, 1L, 1L, 1L, 1L),
-                aggregate.snapshot());
+        ShadowRuntimeDiagnostics.Summary summary = aggregate.snapshot();
+        assertEquals(new ShadowRuntimeDiagnostics.Summary(2L, 30L, 20L, 6L, 330L, 80L,
+                        1L, 1L, 2L, 1L,
+                        2L, 3L, 2L, 3L, 1L, 1L, 1L, 1L),
+                summary);
+        assertEquals(summary.bothReveal() + summary.bothHide(), summary.agreements());
+        assertEquals(summary.v1HidesV2Reveals() + summary.v1RevealsV2Hides(),
+                summary.disagreements());
     }
 }

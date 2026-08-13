@@ -51,8 +51,6 @@ final class ShadowRuntimeDiagnostics {
         private final AtomicLong bothHide = new AtomicLong();
         private final AtomicLong v1HidesV2Reveals = new AtomicLong();
         private final AtomicLong v1RevealsV2Hides = new AtomicLong();
-        private final AtomicLong agreements = new AtomicLong();
-        private final AtomicLong disagreements = new AtomicLong();
         private final AtomicLong v2Observed = new AtomicLong();
         private final AtomicLong v2NotObserved = new AtomicLong();
         private final AtomicLong unsupported = new AtomicLong();
@@ -101,12 +99,20 @@ final class ShadowRuntimeDiagnostics {
         }
 
         Summary snapshot() {
+            long bothRevealValue = bothReveal.get();
+            long bothHideValue = bothHide.get();
+            long v1HidesV2RevealsValue = v1HidesV2Reveals.get();
+            long v1RevealsV2HidesValue = v1RevealsV2Hides.get();
+            long agreementValue = bothRevealValue + bothHideValue;
+            long disagreementValue = v1HidesV2RevealsValue + v1RevealsV2HidesValue;
+
             return new Summary(sectionInitializationCount.get(),
                     sectionInitializationTotalNanos.get(), sectionInitializationMaxNanos.get(),
                     evaluationCount.get(), evaluationTotalNanos.get(), evaluationMaxNanos.get(),
-                    bothReveal.get(), bothHide.get(), v1HidesV2Reveals.get(),
-                    v1RevealsV2Hides.get(), agreements.get(), disagreements.get(), v2Observed.get(), v2NotObserved.get(),
-                    unsupported.get(), unavailable.get(), missingReplacement.get(), failures.get());
+                    bothRevealValue, bothHideValue, v1HidesV2RevealsValue,
+                    v1RevealsV2HidesValue, agreementValue, disagreementValue,
+                    v2Observed.get(), v2NotObserved.get(), unsupported.get(), unavailable.get(),
+                    missingReplacement.get(), failures.get());
         }
 
         private void recordEvaluationTiming(long elapsedNanos) {
@@ -124,22 +130,10 @@ final class ShadowRuntimeDiagnostics {
 
         private void recordAgreementCounts(RuntimeDecisionComparison comparison) {
             switch (comparison) {
-                case BOTH_REVEAL -> {
-                    bothReveal.incrementAndGet();
-                    agreements.incrementAndGet();
-                }
-                case BOTH_HIDE -> {
-                    bothHide.incrementAndGet();
-                    agreements.incrementAndGet();
-                }
-                case V1_HIDES_V2_REVEALS -> {
-                    v1HidesV2Reveals.incrementAndGet();
-                    disagreements.incrementAndGet();
-                }
-                case V1_REVEALS_V2_HIDES -> {
-                    v1RevealsV2Hides.incrementAndGet();
-                    disagreements.incrementAndGet();
-                }
+                case BOTH_REVEAL -> bothReveal.incrementAndGet();
+                case BOTH_HIDE -> bothHide.incrementAndGet();
+                case V1_HIDES_V2_REVEALS -> v1HidesV2Reveals.incrementAndGet();
+                case V1_REVEALS_V2_HIDES -> v1RevealsV2Hides.incrementAndGet();
                 case V2_CANNOT_EVALUATE -> failures.incrementAndGet();
             }
         }

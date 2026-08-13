@@ -15,6 +15,11 @@ class ShadowRuntimeDiagnosticsTest {
     }
 
     @Test
+    void absentStartupPropertyDisablesProductionDiagnostics() {
+        assertFalse(ShadowRuntimeDiagnostics.isEnabled());
+    }
+
+    @Test
     void parsesStartupActivationValues() {
         assertFalse(ShadowRuntimeDiagnostics.parseEnabled(null));
         assertFalse(ShadowRuntimeDiagnostics.parseEnabled("false"));

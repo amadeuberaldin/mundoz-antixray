@@ -9,7 +9,6 @@ final class ShadowRuntimeDiagnostics {
     static final String ENABLED_PROPERTY = "mundoz.antixray.v2-shadow-validation";
     private static final boolean ENABLED = resolveEnabled(
             () -> System.getProperty(ENABLED_PROPERTY));
-    private static final Aggregate AGGREGATE = new Aggregate();
 
     private ShadowRuntimeDiagnostics() {}
 
@@ -30,7 +29,11 @@ final class ShadowRuntimeDiagnostics {
     }
 
     static Aggregate aggregate() {
-        return AGGREGATE;
+        return AggregateHolder.INSTANCE;
+    }
+
+    private static final class AggregateHolder {
+        private static final Aggregate INSTANCE = new Aggregate();
     }
 
     static final class Aggregate {

@@ -1,5 +1,7 @@
 package com.amadeu.mundozantixray;
 
+import com.amadeu.mundozantixray.infrastructure.minecraft.adapter.MinecraftRuntimeShadowEvaluator;
+
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import net.minecraft.SharedConstants;
@@ -23,6 +25,7 @@ import net.minecraft.world.level.chunk.PalettedContainer;
 import net.minecraft.world.level.chunk.Strategy;
 import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -33,6 +36,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
@@ -138,9 +142,17 @@ class AntiXrayEnabledShadowIsolationTest {
                 Blocks.STONE.defaultBlockState());
 
         try (MockedStatic<ShadowRuntimeDiagnostics> diagnostics = mockStatic(
-                ShadowRuntimeDiagnostics.class, CALLS_REAL_METHODS)) {
+                ShadowRuntimeDiagnostics.class, CALLS_REAL_METHODS);
+             MockedConstruction<MinecraftRuntimeShadowEvaluator.DiagnosticOutcome> outcomes =
+                     mockConstruction(MinecraftRuntimeShadowEvaluator.DiagnosticOutcome.class);
+             MockedConstruction<ShadowRuntimeValidationReporter> reporters =
+                     mockConstruction(ShadowRuntimeValidationReporter.class)) {
             serialize(section, fixture, true);
+
             diagnostics.verify(ShadowRuntimeDiagnostics::aggregate, never());
+            diagnostics.verify(ShadowRuntimeDiagnostics::nanoTime, never());
+            assertTrue(outcomes.constructed().isEmpty());
+            assertTrue(reporters.constructed().isEmpty());
         }
     }
 

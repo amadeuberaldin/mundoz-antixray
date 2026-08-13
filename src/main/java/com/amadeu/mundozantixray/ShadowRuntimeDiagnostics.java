@@ -28,6 +28,10 @@ final class ShadowRuntimeDiagnostics {
         }
     }
 
+    static long nanoTime() {
+        return System.nanoTime();
+    }
+
     static Aggregate aggregate() {
         return AggregateHolder.INSTANCE;
     }

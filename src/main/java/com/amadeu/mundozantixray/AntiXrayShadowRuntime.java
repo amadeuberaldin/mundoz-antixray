@@ -55,11 +55,11 @@ final class AntiXrayShadowRuntime {
             return createSectionEvaluation(section);
         }
 
-        long startedNanos = System.nanoTime();
+        long startedNanos = ShadowRuntimeDiagnostics.nanoTime();
         try {
             return createSectionEvaluation(section);
         } finally {
-            recordSectionInitialization(System.nanoTime() - startedNanos);
+            recordSectionInitialization(ShadowRuntimeDiagnostics.nanoTime() - startedNanos);
         }
     }
 
@@ -130,11 +130,11 @@ final class AntiXrayShadowRuntime {
                             representations, v1Hides);
                 }
 
-                long startedNanos = System.nanoTime();
+                long startedNanos = ShadowRuntimeDiagnostics.nanoTime();
                 MinecraftRuntimeShadowEvaluator.DiagnosticOutcome outcome = evaluator.evaluate(
                         level, player, new BlockPos(targetX, targetY, targetZ),
                         state, representations, v1Hides);
-                recordOutcome(outcome, System.nanoTime() - startedNanos);
+                recordOutcome(outcome, ShadowRuntimeDiagnostics.nanoTime() - startedNanos);
                 return outcome.comparison();
             } catch (Throwable shadowFailure) {
                 if (diagnosticsEnabled) {

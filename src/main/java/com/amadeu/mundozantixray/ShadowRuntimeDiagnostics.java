@@ -68,7 +68,8 @@ final class ShadowRuntimeDiagnostics {
 
         void recordUnavailable(RuntimeDecisionComparison comparison, long elapsedNanos) {
             recordEvaluationTiming(elapsedNanos);
-            recordComparisonCounts(comparison);
+            recordAgreementCounts(comparison);
+            v2Observed.incrementAndGet();
             unavailable.incrementAndGet();
         }
 
@@ -77,7 +78,8 @@ final class ShadowRuntimeDiagnostics {
                 long elapsedNanos
         ) {
             recordEvaluationTiming(elapsedNanos);
-            recordComparisonCounts(comparison);
+            recordAgreementCounts(comparison);
+            v2NotObserved.incrementAndGet();
             missingReplacement.incrementAndGet();
         }
 
@@ -103,23 +105,20 @@ final class ShadowRuntimeDiagnostics {
         }
 
         private void recordComparisonCounts(RuntimeDecisionComparison comparison) {
+            recordAgreementCounts(comparison);
             switch (comparison) {
-                case BOTH_REVEAL -> {
-                    agreements.incrementAndGet();
-                    v2Observed.incrementAndGet();
-                }
-                case BOTH_HIDE -> {
-                    agreements.incrementAndGet();
-                    v2NotObserved.incrementAndGet();
-                }
-                case V1_HIDES_V2_REVEALS -> {
-                    disagreements.incrementAndGet();
-                    v2Observed.incrementAndGet();
-                }
-                case V1_REVEALS_V2_HIDES -> {
-                    disagreements.incrementAndGet();
-                    v2NotObserved.incrementAndGet();
-                }
+                case BOTH_REVEAL, V1_HIDES_V2_REVEALS -> v2Observed.incrementAndGet();
+                case BOTH_HIDE, V1_REVEALS_V2_HIDES -> v2NotObserved.incrementAndGet();
+                case V2_CANNOT_EVALUATE -> { }
+            }
+        }
+
+        private void recordAgreementCounts(RuntimeDecisionComparison comparison) {
+            switch (comparison) {
+                case BOTH_REVEAL -> agreements.incrementAndGet();
+                case BOTH_HIDE -> agreements.incrementAndGet();
+                case V1_HIDES_V2_REVEALS -> disagreements.incrementAndGet();
+                case V1_REVEALS_V2_HIDES -> disagreements.incrementAndGet();
                 case V2_CANNOT_EVALUATE -> failures.incrementAndGet();
             }
         }

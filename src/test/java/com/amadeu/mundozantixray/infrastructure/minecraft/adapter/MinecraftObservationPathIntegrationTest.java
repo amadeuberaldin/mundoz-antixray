@@ -32,6 +32,8 @@ class MinecraftObservationPathIntegrationTest {
 
     private static final Vec3 ORIGIN = new Vec3(0.5D, 0.5D, 0.5D);
     private static final BlockPos TARGET = new BlockPos(3, 0, 0);
+    private static final BlockPos VERTICAL_TARGET = BlockPos.ZERO;
+    private static final BlockPos VERTICAL_GRATE = new BlockPos(0, 1, 0);
 
     private final MinecraftObservationPathCollector collector =
             new MinecraftObservationPathCollector(
@@ -137,6 +139,74 @@ class MinecraftObservationPathIntegrationTest {
     }
 
     @Test
+    void verticalCopperGrateShaftIsObservedFromAboveAndObliqueAngles() {
+        MinecraftObservationPathClassifier classifier =
+                new MinecraftObservationPathClassifier();
+        List<Vec3> observationOrigins = List.of(
+                new Vec3(0.5D, 3.62D, 0.5D),
+                new Vec3(1.5D, 3.62D, 0.5D),
+                new Vec3(0.5D, 3.62D, 1.5D),
+                new Vec3(1.5D, 3.62D, 1.5D)
+        );
+
+        for (Block grate : Blocks.COPPER_GRATE.asList()) {
+            for (boolean waterlogged : List.of(false, true)) {
+                BlockState grateState = grate.defaultBlockState().setValue(
+                        BlockStateProperties.WATERLOGGED, waterlogged
+                );
+                for (Vec3 observationOrigin : observationOrigins) {
+                    List<TraversedState> reads = new ArrayList<>();
+                    List<Vec3> samples = new MinecraftObservationTargetSampler()
+                            .samples(observationOrigin, VERTICAL_TARGET);
+                    List<ObservationContext> contexts = collector.collect(
+                            observationOrigin, VERTICAL_TARGET, position -> {
+                                BlockState state = verticalShaftState(position, grateState);
+                                reads.add(new TraversedState(position, state));
+                                return Optional.of(state);
+                            }
+                    );
+                    String description = grate + " waterlogged=" + waterlogged
+                            + " origin=" + observationOrigin;
+
+                    assertEquals(samples.size(), contexts.size(), description);
+                    int readOffset = 0;
+                    boolean passThroughSampleCrossesGrate = false;
+                    for (int sampleIndex = 0; sampleIndex < contexts.size(); sampleIndex++) {
+                        ObservationContext context = contexts.get(sampleIndex);
+                        int pathSize = context.pathBeforeTarget().size();
+                        List<TraversedState> sampleReads = reads.subList(
+                                readOffset, readOffset + pathSize
+                        );
+                        readOffset += pathSize;
+
+                        assertEquals(
+                                sampleReads.stream()
+                                        .map(read -> classifier.classify(read.state()))
+                                        .toList(),
+                                context.pathBeforeTarget(),
+                                description + " sample=" + sampleIndex
+                                        + " endpoint=" + samples.get(sampleIndex)
+                        );
+                        boolean crossesExpectedGrate = sampleReads.stream()
+                                .anyMatch(read -> read.position().equals(VERTICAL_GRATE)
+                                        && read.state() == grateState);
+                        boolean containsOccluder = context.pathBeforeTarget().contains(
+                                ObservationPathBehavior.OCCLUDING
+                        );
+                        passThroughSampleCrossesGrate |= crossesExpectedGrate
+                                && !containsOccluder;
+                    }
+
+                    assertEquals(reads.size(), readOffset, description);
+                    assertEquals(true, passThroughSampleCrossesGrate, description);
+                    assertEquals(ObservationDecision.OBSERVED,
+                            evaluationService.evaluate(contexts), description);
+                }
+            }
+        }
+    }
+
+    @Test
     void unavailablePathFailsVisible() {
         assertEquals(
                 ObservationDecision.OBSERVED,
@@ -193,4 +263,20 @@ class MinecraftObservationPathIntegrationTest {
     }
 
     private record TraversedState(BlockPos position, BlockState state) {}
+
+    private static BlockState verticalShaftState(
+            BlockPos position,
+            BlockState grateState
+    ) {
+        if (position.equals(VERTICAL_TARGET)) {
+            return Blocks.DIAMOND_ORE.defaultBlockState();
+        }
+        if (position.equals(VERTICAL_GRATE)) {
+            return grateState;
+        }
+        if (position.getY() >= 2) {
+            return Blocks.AIR.defaultBlockState();
+        }
+        return Blocks.END_STONE.defaultBlockState();
+    }
 }

@@ -70,6 +70,15 @@ class V1RepresentationEfficiencyCharacterizationTest {
                         9, 9, 15, 15)
         ), measurements.stream().map(Measurement::stable).toList());
 
+        assertSame(null, measurements.get(0).selectedReplacement());
+        for (int index = 1; index <= 4; index++) {
+            assertSame(Blocks.STONE.defaultBlockState(),
+                    measurements.get(index).selectedReplacement());
+        }
+        assertSame(Blocks.NETHERRACK.defaultBlockState(),
+                measurements.get(5).selectedReplacement());
+        assertSame(null, measurements.get(6).selectedReplacement());
+
         assertTrue(measurements.stream()
                 .filter(measurement -> measurement.replacedProtected() > 0)
                 .allMatch(measurement -> measurement.transformedCompressedBytes()
